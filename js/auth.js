@@ -61,6 +61,11 @@ export async function resetPassword(email) {
   await sendPasswordResetEmail(auth, email);
 }
 
+export async function getUserProfile(uid) {
+  const userDoc = await getDoc(doc(db, "users", uid));
+  return userDoc.exists() ? userDoc.data() : null;
+}
+
 export async function logoutUser() {
   await signOut(auth);
 }
@@ -122,36 +127,61 @@ export async function getProgress() {
   const user = auth.currentUser;
   if (!user) return [];
 
-  const q = query(collection(db, "progress"), where("userId", "==", user.uid));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  // Try to load from LocalStorage first (for instant speed)
+  const localProgress = JSON.parse(localStorage.getItem(`progress_${user.uid}`) || '[]');
+  
+  try {
+    const q = query(collection(db, "progress"), where("userId", "==", user.uid));
+    const snapshot = await withTimeout(getDocs(q), 5000);
+    const firestoreProgress = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Merge and sync LocalStorage
+    localStorage.setItem(`progress_${user.uid}`, JSON.stringify(firestoreProgress));
+    return firestoreProgress;
+  } catch (err) {
+    console.warn('Firestore progress load failed, using local fallback:', err);
+    return localProgress;
+  }
 }
 
 export async function updateProgress(lessonId, status) {
   const user = auth.currentUser;
   if (!user) return;
 
-  const q = query(collection(db, "progress"), where("userId", "==", user.uid), where("lessonId", "==", lessonId));
-  const snapshot = await getDocs(q);
-
   const progressData = {
     userId: user.uid,
     lessonId: String(lessonId),
     status: String(status),
-    updatedAt: serverTimestamp()
+    updatedAt: new Date().toISOString()
   };
 
-  if (status === 'completed') {
-    progressData.completedAt = serverTimestamp();
-  }
-
-  if (!snapshot.empty) {
-    // Update existing
-    await updateDoc(snapshot.docs[0].ref, progressData);
+  // 1. Save to LocalStorage immediately
+  const localProgress = JSON.parse(localStorage.getItem(`progress_${user.uid}`) || '[]');
+  const existingIdx = localProgress.findIndex(p => p.lessonId === lessonId);
+  if (existingIdx > -1) {
+    localProgress[existingIdx] = { ...localProgress[existingIdx], ...progressData };
   } else {
-    // Create new
-    progressData.startedAt = serverTimestamp();
-    await addDoc(collection(db, "progress"), progressData);
+    localProgress.push(progressData);
+  }
+  localStorage.setItem(`progress_${user.uid}`, JSON.stringify(localProgress));
+
+  // 2. Try to save to Firestore
+  try {
+    const q = query(collection(db, "progress"), where("userId", "==", user.uid), where("lessonId", "==", lessonId));
+    const snapshot = await withTimeout(getDocs(q), 5000);
+
+    const dbData = { ...progressData, updatedAt: serverTimestamp() };
+    if (status === 'completed') dbData.completedAt = serverTimestamp();
+
+    if (!snapshot.empty) {
+      await updateDoc(snapshot.docs[0].ref, dbData);
+    } else {
+      dbData.startedAt = serverTimestamp();
+      await addDoc(collection(db, "progress"), dbData);
+    }
+  } catch (err) {
+    console.error('Firestore progress update failed:', err);
+    // LocalStorage still has it, so it's "fine" for the UI
   }
 }
 

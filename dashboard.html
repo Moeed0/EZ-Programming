@@ -18,8 +18,20 @@
   <div class="dashboard-container">
     <!-- Header -->
     <div class="dashboard-header">
-      <h1 id="welcomeText">My Lessons</h1>
-      <p>Browse available lessons and track your learning progress.</p>
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+        <div>
+          <h1 id="welcomeText">My Lessons</h1>
+          <p>Browse available lessons and track your learning progress.</p>
+        </div>
+        
+        <div class="card" style="padding: 16px 24px; min-width: 280px; display: flex; align-items: center; gap: 16px; background-color: #F8FAFC;">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background-color: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem;" id="userInitials">?</div>
+          <div>
+            <h4 style="margin: 0; font-size: 1rem;" id="profileName">Loading...</h4>
+            <p style="margin: 0; font-size: 0.8125rem; color: var(--color-text-secondary);" id="profileEmail">...</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Progress Bar -->
@@ -47,7 +59,7 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js';
-    import { onAuthChange, apiRequest, getCurrentUser } from './js/auth.js';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js';
 
     renderNavbar('dashboard');
     renderFooter();
@@ -228,9 +240,26 @@
     onAuthChange(async (user) => {
       if (user) {
         document.getElementById('welcomeText').textContent = 'My Lessons';
+        
+        // Load User Profile
+        getUserProfile(user.uid).then(profile => {
+          if (profile) {
+            document.getElementById('profileName').textContent = profile.name || 'User';
+            document.getElementById('profileEmail').textContent = user.email;
+            document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
+          } else {
+            document.getElementById('profileName').textContent = 'Learner';
+            document.getElementById('profileEmail').textContent = user.email;
+          }
+        }).catch(() => {
+          document.getElementById('profileName').textContent = 'Learner';
+          document.getElementById('profileEmail').textContent = user.email;
+        });
+
         userProgress = await loadProgress();
       } else {
         document.getElementById('progressSection').classList.add('hidden');
+        window.location.href = 'login.html';
       }
 
       const lessons = await loadLessons();

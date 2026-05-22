@@ -363,16 +363,19 @@
      */
     async function markLessonComplete() {
       try {
-        await apiRequest('/api/progress/update', {
-          method: 'POST',
-          body: JSON.stringify({ lessonId: currentLessonId, status: 'completed' })
-        });
+        const markBtn = document.getElementById('markCompleteBtn');
+        markBtn.disabled = true;
+        markBtn.textContent = 'Saving...';
+
+        await updateProgress(currentLessonId, 'completed');
+        
         showToast('Lesson marked as completed!', 'success');
-        document.getElementById('markCompleteBtn').textContent = 'Completed!';
-        document.getElementById('markCompleteBtn').disabled = true;
+        markBtn.textContent = 'Completed ✓';
+        markBtn.classList.remove('btn-primary');
+        markBtn.classList.add('btn-success');
       } catch (error) {
-        console.error('Failed to mark complete:', error);
-        showToast('Progress saved locally.', 'info');
+        console.error('Progress update error:', error);
+        showToast('Status saved locally.', 'info');
       }
     }
 

@@ -2,6 +2,15 @@
 
 EZ Programming is a beginner-friendly interactive Python learning platform. This version is designed to run directly on **GitHub Pages** without any backend server.
 
+## FAQ & Troubleshooting
+
+### GitHub Security Alert: "Google API Key leaked"
+You might see a GitHub alert about a leaked API key. 
+**Don't worry!** Firebase API keys are meant to be public so the browser can connect to the database. To keep it secure:
+1. Go to your **Google Cloud Console > Credentials**.
+2. Restrict the API key to "Websites" and add your GitHub Pages link (e.g., `https://Moeed0.github.io/`).
+3. This prevents other people from using your key on their own websites.
+
 ## 🚀 Live Demo
 Once you enable GitHub Pages in your repo settings, your site will be live at:
 `https://your-username.github.io/EZ-Programming/`
