@@ -21,8 +21,18 @@ import {
   query,
   where,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  getDocFromCache,
+  getDocsFromCache
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// Helper for timeouts
+async function withTimeout(promise, ms = 5000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+  ]);
+}
 
 // ---- AUTH FUNCTIONS ----
 
@@ -61,33 +71,44 @@ export function getCurrentUser() {
 // ---- LESSON FUNCTIONS ----
 
 export async function getLessons(admin = false) {
-  let q = query(collection(db, "lessons"), orderBy("orderIndex", "asc"));
+  try {
+    let q = query(collection(db, "lessons"), orderBy("orderIndex", "asc"));
 
-  if (!admin) {
-    q = query(collection(db, "lessons"), where("isPublished", "==", true), orderBy("orderIndex", "asc"));
+    if (!admin) {
+      q = query(collection(db, "lessons"), where("isPublished", "==", true), orderBy("orderIndex", "asc"));
+    }
+
+    const snapshot = await withTimeout(getDocs(q), 3000);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (err) {
+    console.warn('Firestore fetch failed or timed out:', err);
+    return []; // Triggers fallback in dashboard.html
   }
-
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
 export async function getLessonById(lessonId) {
-  const lessonDoc = await getDoc(doc(db, "lessons", lessonId));
-  if (!lessonDoc.exists()) return null;
+  try {
+    const lessonDoc = await withTimeout(getDoc(doc(db, "lessons", lessonId)), 3000);
+    if (!lessonDoc.exists()) return null;
 
-  // Get sections subcollection
-  const sectionsSnapshot = await getDocs(query(collection(db, "lessons", lessonId, "sections"), orderBy("order", "asc")));
-  const sections = sectionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Get sections and exercises
+    const [sectionsSnap, exercisesSnap] = await Promise.all([
+      getDocs(query(collection(db, "lessons", lessonId, "sections"), orderBy("order", "asc"))),
+      getDocs(collection(db, "lessons", lessonId, "exercises"))
+    ]);
 
-  // Get exercises subcollection
-  const exercisesSnapshot = await getDocs(collection(db, "lessons", lessonId, "exercises"));
-  const exercises = exercisesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const sections = sectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const exercises = exercisesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  return {
-    lesson: { id: lessonDoc.id, ...lessonDoc.data() },
-    sections,
-    exercises
-  };
+    return {
+      lesson: { id: lessonDoc.id, ...lessonDoc.data() },
+      sections,
+      exercises
+    };
+  } catch (err) {
+    console.warn('Firestore lesson fetch failed:', err);
+    return null; // Triggers fallback in lesson.html
+  }
 }
 
 // ---- PROGRESS FUNCTIONS ----
@@ -211,7 +232,9 @@ export async function apiRequest(endpoint, options = {}) {
       await deleteLesson(id);
       return { message: 'Success' };
     }
-    return await getLessonById(id);
+    const data = await getLessonById(id);
+    if (!data) throw new Error('Lesson not found');
+    return data;
   }
 
   if (endpoint === '/api/progress' && method === 'GET') {

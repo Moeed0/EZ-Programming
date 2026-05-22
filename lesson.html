@@ -436,15 +436,28 @@ sys.stderr = StringIO()
 
     // ---- Initialize ----
     async function init() {
-      const lessonData = await loadLesson(currentLessonId);
-      renderLessonContent(lessonData);
+      try {
+        const lessonData = await loadLesson(currentLessonId);
+        renderLessonContent(lessonData);
 
-      const starterCode = lessonData.exercises && lessonData.exercises.length > 0
-        ? lessonData.exercises[0].starterCode
-        : '# Write your Python code here\nprint("Hello, World!")\n';
+        const starterCode = lessonData.exercises && lessonData.exercises.length > 0
+          ? lessonData.exercises[0].starterCode
+          : '# Write your Python code here\nprint("Hello, World!")\n';
 
-      initEditor(starterCode);
-      initPyodide();
+        initEditor(starterCode);
+        
+        // Load Pyodide last as it is heavy
+        initPyodide();
+      } catch (error) {
+        console.error('Initialization error:', error);
+        document.getElementById('lessonContent').innerHTML = `
+          <div class="text-error" style="padding: 20px;">
+            <h3>Error Loading Lesson</h3>
+            <p>${error.message}</p>
+            <a href="dashboard.html" class="btn btn-outline" style="margin-top: 16px;">Back to Lessons</a>
+          </div>
+        `;
+      }
     }
 
     init();
