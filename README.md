@@ -34,6 +34,31 @@ css/style.css       All styles
 firestore.rules     Firestore security rules
 ```
 
+## Setting Up an Admin Account
+
+An admin user can access `/admin.html` and create, edit, publish, and delete lessons directly from the browser.
+
+### Step 1 — Sign up normally
+Use `/signup.html` to create your account. The default role is `student`.
+
+### Step 2 — Promote to admin (one-time, via Firebase Console)
+1. Open **Firebase Console → Firestore Database**
+2. Open **Collection: `users`**
+3. Find your user document (keyed by your UID)
+4. Edit the `role` field: `student → admin`
+5. Save
+
+### Step 3 — Access the admin panel
+1. Log out and log back in (forces `getUserRole()` to pick up the change)
+2. The **Admin** link now appears in the navbar
+3. Click it to open `/admin.html`
+
+### How admin authentication works
+- `admin.html` runs `getUserProfile(uid)` and checks `profile.role`
+- If `role !== 'admin'` the page redirects to `/dashboard.html` within 1.5 s
+- The navbar reads the same `role` field and only shows "Admin" for admin users
+- Firestore `rules_version = '2'` enforces the same check server-side: lesson documents can only be written by authenticated users whose `users/{uid}.role` equals `admin`
+
 ## Firestore Data Model
 
 ```
@@ -51,24 +76,22 @@ progress/{uid}_{lessonId}
 rules_version = '2';
 service cloud.firestore {
   match /databases/{db}/documents {
-    // Users
+    // Users — anyone signed in can read; only the owner can update
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == uid;
     }
-    // Lessons (public read; admin write)
+    // Lessons — public read; admin write
     match /lessons/{id} {
       allow read, list: if true;
-      allow write: delete: if request.auth != null
+      allow write, delete: if request.auth != null
         && get(/databases/$(db)/documents/users/$(auth.uid)).data.role == 'admin';
     }
     // Progress — user can only access their own docs
     match /progress/{docId} {
-      allow list, get: if request.auth != null
-        && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null
-        && request.auth.uid == resource.data.userId;
-      allow update, delete: if request.auth != null
-        && request.auth.uid == resource.data.userId;
+      allow list, get: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create:    if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }

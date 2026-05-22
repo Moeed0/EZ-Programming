@@ -1,7 +1,8 @@
 // ============================================
 // Navbar Component — Shared across all pages
 // ============================================
-import { onAuthChange, logoutUser } from './auth.js';
+import { onAuthChange, logoutUser, getUserProfile } from './auth.js';
+import { getCurrentUser } from './auth.js';
 
 // ============================================
 // renderNavbar()
@@ -27,6 +28,10 @@ export function renderNavbar(activePage = '') {
         <a href="signup.html" id="navSignup">
           <button class="btn btn-primary btn-sm">Sign Up</button>
         </a>
+        <!-- Admin link is injected after role check (see onAuthChange below) -->
+        <a href="admin.html" id="navAdmin" class="hidden">
+          <button class="btn btn-outline btn-sm">Admin</button>
+        </a>
         <a href="#" id="navLogout" class="hidden">
           <button class="btn btn-outline btn-sm">Logout</button>
         </a>
@@ -43,24 +48,37 @@ export function renderNavbar(activePage = '') {
     });
   }
 
-  // Listen for auth state to toggle login/logout links
-  onAuthChange((user) => {
-    const navLogin = document.getElementById('navLogin');
-    const navSignup = document.getElementById('navSignup');
-    const navLogout = document.getElementById('navLogout');
+  // Listen for auth state to toggle login/logout links and Admin button
+  onAuthChange(async (user) => {
+    const navLogin     = document.getElementById('navLogin');
+    const navSignup    = document.getElementById('navSignup');
+    const navLogout    = document.getElementById('navLogout');
     const navDashboard = document.getElementById('navDashboard');
+    const navAdmin     = document.getElementById('navAdmin');
 
     if (user) {
       // User is logged in
-      if (navLogin) navLogin.classList.add('hidden');
-      if (navSignup) navSignup.classList.add('hidden');
-      if (navLogout) navLogout.classList.remove('hidden');
+      if (navLogin)     navLogin.classList.add('hidden');
+      if (navSignup)    navSignup.classList.add('hidden');
+      if (navLogout)    navLogout.classList.remove('hidden');
       if (navDashboard) navDashboard.classList.remove('hidden');
+
+      // Fetch profile to determine admin status
+      try {
+        const profile = await getUserProfile(user.uid);
+        const isAdmin = (profile && profile.role === 'admin');
+        if (navAdmin) {
+          navAdmin.classList.toggle('hidden', !isAdmin);
+        }
+      } catch (err) {
+        if (navAdmin) navAdmin.classList.add('hidden');
+      }
     } else {
       // User is logged out
-      if (navLogin) navLogin.classList.remove('hidden');
-      if (navSignup) navSignup.classList.remove('hidden');
-      if (navLogout) navLogout.classList.add('hidden');
+      if (navLogin)     navLogin.classList.remove('hidden');
+      if (navSignup)    navSignup.classList.remove('hidden');
+      if (navLogout)    navLogout.classList.add('hidden');
+      if (navAdmin)     navAdmin.classList.add('hidden');
     }
   });
 

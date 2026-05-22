@@ -1010,24 +1010,3 @@ textarea.form-input {
   min-height: 100px;
   resize: vertical;
 }
-
-/* ============================================
-   Progress Debug Panel  (dashboard.html)
-   Visible on page — no DevTools needed.
-   Screenshot this panel for viva if progress is not showing.
-  ============================================ */
-#debugPanel { display: none; }
-
-.log-entry {
-  border-bottom: 1px solid #334155;
-  padding: 2px 0;
-  word-break: break-all;
-}
-.log-entry:last-child { border-bottom: none; }
-
-.log-info    { color: #93C5FD; }
-.log-warn    { color: #FCD34D; }
-.log-error   { color: #FCA5A5; }
-.log-success { color: #86EFAC; }
-
-#toggleDebugBtn { margin-bottom: 4px; }

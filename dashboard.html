@@ -23,10 +23,10 @@
           <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h1>
           <p class="text-secondary">Browse available lessons and track your learning. Click a lesson to begin!</p>
         </div>
-        <button class="btn btn-outline btn-sm" id="forceSyncBtn">Force Sync Progress</button>
       </div>
-        
-        <!-- User Profile Card (Top Right) -->
+
+      <!-- User Profile Card (Top Right) -->
+      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
         <div class="card" style="padding: 12px 20px; min-width: 260px; display: flex; align-items: center; gap: 16px; background-color: white; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
           <div style="width: 44px; height: 44px; border-radius: 50%; background-color: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem;" id="userInitials">?</div>
           <div style="overflow: hidden;">
@@ -37,7 +37,16 @@
       </div>
     </div>
 
-<!-- Progress Bar Removed as per user request -->
+    <!-- Progress Bar -->
+    <div class="progress-bar-container">
+      <div class="progress-header">
+        <span id="progressLabel">Overall Progress</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+    </div>
 
     <!-- Lessons Grid -->
     <div id="lessonsContainer">
@@ -46,24 +55,6 @@
         <p>Loading lessons...</p>
       </div>
     </div>
-
-    <!-- ═══════════════ Progress Debug Panel ═══════════════ -->
-    <!-- Visible on every page load — no DevTools needed.
-         Screenshot this panel for viva if progress is not showing.
-         Collapse/expand with the button below. -->
-    <div style="margin: 16px 0;">
-      <button type="button" class="btn btn-outline btn-sm" id="toggleDebugBtn"
-              style="margin-bottom: 4px;">
-        🔧 Progress Debug Panel
-      </button>
-      <div id="debugPanel" style="display:none; background:#1e293b; color:#e2e8f0;
-        border:1px solid #334155; border-radius:8px; padding:12px;
-        font:12px/1.6 'Menlo','Monaco','Courier New',monospace;
-        max-height:280px; overflow-y:auto;">
-        <div class="log-entry log-info">Waiting for events…</div>
-      </div>
-    </div>
-    <!-- ═══════════════════════════════════════════════════════ -->
   </div>
 
   <!-- Footer -->
@@ -78,86 +69,16 @@
 
     // Sample lessons data (used when backend is not available)
     const sampleLessons = [
-      {
-        id: 'lesson-1',
-        title: 'Hello World in Python',
-        topic: 'Introduction',
-        difficulty: 'beginner',
-        orderIndex: 1,
-        isPublished: true
-      },
-      {
-        id: 'lesson-2',
-        title: 'Variables and Data Types',
-        topic: 'Basics',
-        difficulty: 'beginner',
-        orderIndex: 2,
-        isPublished: true
-      },
-      {
-        id: 'lesson-3',
-        title: 'Conditional Statements',
-        topic: 'Control Flow',
-        difficulty: 'beginner',
-        orderIndex: 3,
-        isPublished: true
-      },
-      {
-        id: 'lesson-4',
-        title: 'Loops - For and While',
-        topic: 'Control Flow',
-        difficulty: 'intermediate',
-        orderIndex: 4,
-        isPublished: true
-      },
-      {
-        id: 'lesson-5',
-        title: 'Functions in Python',
-        topic: 'Functions',
-        difficulty: 'intermediate',
-        orderIndex: 5,
-        isPublished: true
-      },
-      {
-        id: 'lesson-6',
-        title: 'Lists and Tuples',
-        topic: 'Data Structures',
-        difficulty: 'intermediate',
-        orderIndex: 6,
-        isPublished: true
-      },
-      {
-        id: 'lesson-7',
-        title: 'Dictionaries (Key-Value)',
-        topic: 'Data Structures',
-        difficulty: 'intermediate',
-        orderIndex: 7,
-        isPublished: true
-      },
-      {
-        id: 'lesson-8',
-        title: 'List Comprehensions',
-        topic: 'Advanced Basics',
-        difficulty: 'intermediate',
-        orderIndex: 8,
-        isPublished: true
-      },
-      {
-        id: 'lesson-9',
-        title: 'Error Handling (Try/Except)',
-        topic: 'Error Handling',
-        difficulty: 'intermediate',
-        orderIndex: 9,
-        isPublished: true
-      },
-      {
-        id: 'lesson-10',
-        title: 'File I/O basics',
-        topic: 'File Handling',
-        difficulty: 'advanced',
-        orderIndex: 10,
-        isPublished: true
-      }
+      { id: 'lesson-1',  title: 'Hello World in Python',      topic: 'Introduction',      difficulty: 'beginner',    orderIndex: 1,  isPublished: true },
+      { id: 'lesson-2',  title: 'Variables and Data Types',   topic: 'Basics',            difficulty: 'beginner',    orderIndex: 2,  isPublished: true },
+      { id: 'lesson-3',  title: 'Conditional Statements',     topic: 'Control Flow',      difficulty: 'beginner',    orderIndex: 3,  isPublished: true },
+      { id: 'lesson-4',  title: 'Loops - For and While',      topic: 'Control Flow',      difficulty: 'intermediate',orderIndex: 4,  isPublished: true },
+      { id: 'lesson-5',  title: 'Functions in Python',        topic: 'Functions',         difficulty: 'intermediate',orderIndex: 5,  isPublished: true },
+      { id: 'lesson-6',  title: 'Lists and Tuples',           topic: 'Data Structures',   difficulty: 'intermediate',orderIndex: 6,  isPublished: true },
+      { id: 'lesson-7',  title: 'Dictionaries (Key-Value)',   topic: 'Data Structures',   difficulty: 'intermediate',orderIndex: 7,  isPublished: true },
+      { id: 'lesson-8',  title: 'List Comprehensions',        topic: 'Advanced Basics',   difficulty: 'intermediate',orderIndex: 8,  isPublished: true },
+      { id: 'lesson-9',  title: 'Error Handling (Try/Except)',topic: 'Error Handling',    difficulty: 'intermediate',orderIndex: 9,  isPublished: true },
+      { id: 'lesson-10', title: 'File I/O Basics',            topic: 'File Handling',     difficulty: 'advanced',    orderIndex: 10, isPublished: true },
     ];
 
     let userProgress = {};
@@ -176,104 +97,72 @@
     }
 
     /**
-     * Debug helper — writes to the on-page progress debug panel.
-     * This is visible without opening DevTools, so you can screenshot it for viva.
-     */
-    function logProgress(msg, type = 'info') {
-      const panel = document.getElementById('debugPanel');
-      if (!panel) return;
-      const ts  = new Date().toLocaleTimeString();
-      const cls = type === 'error' ? 'log-error'
-               : type === 'success' ? 'log-success'
-               : type === 'warn'    ? 'log-warn' : 'log-info';
-      panel.innerHTML = `<div class="log-entry ${cls}">[${ts}] ${msg}</div>` + panel.innerHTML;
-      console.log('[Progress]', msg);
-    }
-
-    /**
      * Load user progress from Firestore.
-     * Uses getProgress() via apiRequest — returns an array of
-     *   { lessonId, userId, status, completedAt }
+     * apiRequest wraps getProgress() in { progress: [...] }
      */
     async function loadProgress(user) {
       try {
-        if (!user) {
-          logProgress('loadProgress: user is null — returning {}', 'warn');
-          return {};
-        }
-
-        logProgress('loadProgress | uid: ' + user.uid, 'info');
-        // apiRequest wraps getProgress() result in { progress: [...] }
-        // getProgress() itself returns a flat array.
+        if (!user) return {};
         const data = await apiRequest('/api/progress');
-        const items = Array.isArray(data)               // if called directly
+        const items = Array.isArray(data)               // direct import
           ? data
-          : (data && Array.isArray(data.progress)        // if called via apiRequest wrapper
+          : (data && Array.isArray(data.progress)        // via apiRequest wrapper
             ? data.progress
             : []);
-
-        logProgress('getProgress returned ' + items.length + ' items from Firestore', 'info');
-        items.forEach(p =>
-          logProgress('  ✔ lessonId=' + p.lessonId + '  status=' + p.status, 'success')
-        );
-
-        const progressMap = {};
-        items.forEach(p => {
-          const key = String(p.lessonId || '').trim();
-          if (key) progressMap[key] = String(p.status || '');
-        });
-
-        if (Object.keys(progressMap).length === 0) {
-          logProgress('progressMap is EMPTY after getProgress(). ' +
-            'Possible causes: (1) No progress doc in Firestore for uid: ' + user.uid + ', ' +
-            '(2) userId field mismatch: doc stores a different uid, ' +
-            '(3) Firestore rules rejected the query silently, ' +
-            '(4) firestore.rules not yet deployed', 'warn');
-        }
-        return progressMap;
+        return items;
       } catch (err) {
-        logProgress('loadProgress FAILED: ' + (err.code || err.name || '') + ' — ' + (err.message || ''), 'error');
-        console.error('[Dashboard] loadProgress:', err);
-        return {};
+        console.warn('loadProgress error:', err.code, err.message);
+        return [];
       }
     }
 
     /**
-     * Render lesson cards
+     * Update the progress bar and percentage label.
+     * Called after loadProgress + renderLessons completes.
+     */
+    function updateProgressBar(completedCount, totalLessons) {
+      const pct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+      const fill = document.getElementById('progressFill');
+      const lbl  = document.getElementById('progressPercent');
+      if (fill) fill.style.width = pct + '%';
+      if (lbl)  lbl.textContent  = pct + '%';
+    }
+
+    /**
+     * Render lesson cards and update the progress bar
      */
     function renderLessons(lessons) {
       const container = document.getElementById('lessonsContainer');
       const completedCount = Object.values(userProgress).filter(s => s === 'completed').length;
-      const totalLessons = lessons.length;
-      const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+      const totalLessons   = lessons.length;
 
-      // Update progress bar (Removed as per user request)
+      updateProgressBar(completedCount, totalLessons);
 
       if (lessons.length === 0) {
         container.innerHTML = `
           <div class="text-center" style="padding: 60px 24px;">
             <p class="text-secondary">No lessons available yet. Check back soon!</p>
-          </div>
-        `;
+          </div>`;
         return;
       }
 
       const cardsHTML = lessons.map(lesson => {
-        const lessonId = String(lesson.id);
-        const status = userProgress[lessonId] || '';
-        let statusText = '';
-        let statusClass = '';
+        const lessonId  = String(lesson.id);
+        const status    = userProgress[lessonId] || '';
+        let   statusText = '';
+        let   statusClass = '';
 
         if (status === 'completed') {
-          statusText = 'Completed';
+          statusText  = 'Completed';
           statusClass = 'completed';
         } else if (status === 'in-progress') {
-          statusText = 'In Progress';
+          statusText  = 'In Progress';
           statusClass = 'in-progress';
         }
 
-        const badgeClass = lesson.difficulty === 'beginner' ? 'badge-beginner' :
-                           lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
+        const badgeClass = lesson.difficulty === 'beginner'    ? 'badge-beginner'
+                         : lesson.difficulty === 'intermediate'? 'badge-intermediate'
+                         : 'badge-advanced';
 
         return `
           <a href="lesson.html?id=${lesson.id}" style="text-decoration: none;">
@@ -283,8 +172,7 @@
               <p>${lesson.topic}</p>
               ${statusText ? `<span class="lesson-card-status ${statusClass}">${statusText}</span>` : `<span class="lesson-card-status" style="color: var(--color-text-secondary);">Not started</span>`}
             </div>
-          </a>
-        `;
+          </a>`;
       }).join('');
 
       container.innerHTML = `<div class="lessons-grid">${cardsHTML}</div>`;
@@ -295,8 +183,7 @@
       try {
         if (user) {
           document.getElementById('welcomeText').textContent = 'My Lessons';
-          
-          // Load User Profile
+
           getUserProfile(user.uid).then(profile => {
             if (profile) {
               document.getElementById('profileName').textContent = profile.name || 'User';
@@ -315,67 +202,29 @@
 
         const lessons = await loadLessons();
         renderLessons(lessons);
-        
-        // Diagnostic toast
-        if (Object.keys(userProgress).length > 0) {
-          showToast(`Cloud Sync: ${Object.keys(userProgress).length} items found.`, 'success');
-        } else {
-          showToast("Cloud Sync: No progress found yet.", "info");
-        }
       } catch (fatalError) {
         console.error('Core Dashboard Error:', fatalError);
         alert('Dashboard Init Error: ' + fatalError.message);
       }
     });
 
-    document.getElementById('toggleDebugBtn').addEventListener('click', function () {
-      const panel = document.getElementById('debugPanel');
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      this.textContent = panel.style.display === 'none'
-        ? '\u{1F527} Progress Debug Panel'
-        : '\u{2715} Progress Debug Panel';
-    });
-
-    document.getElementById('forceSyncBtn').addEventListener('click', async () => {
-      const user = getCurrentUser();
-      if (!user) {
-        logProgress('Force Sync: user is null', 'error');
-        alert("You are not logged in!");
-        return;
-      }
-      showToast("Manual Syncing...", "info");
-      logProgress('Force Sync — refreshing progress for uid: ' + user.uid, 'info');
-      try {
-        userProgress = await loadProgress(user);
-        const lessons = await loadLessons();
-        renderLessons(lessons);
-        const count = Object.keys(userProgress).length;
-        logProgress('Sync Complete — items loaded from Firestore: ' + count, 'success');
-        alert(`Sync Complete!\nUser ID: ${user.uid}\nItems Found: ${count}`);
-      } catch (err) {
-        logProgress('Force Sync FAILED: ' + err.code + ' ' + err.message, 'error');
-      }
-    });
-
     /**
-     * Force a full progress re-render. Called by pageshow,
-     * the storage event, and the custom 'progress-updated' event
-     * emitted by lesson.html after a successful mark-complete.
+     * Re-load progress whenever the page becomes visible again.
+     * Fires on direct navigation, back/forward, and when the browser restores
+     * the page from the bfcache (back-button cache).
      */
     async function refreshProgressOnShow() {
       const user = getCurrentUser();
       if (!user) return;
-      logProgress('refreshProgressOnShow() triggered', 'info');
       userProgress = await loadProgress(user);
       const lessons = await loadLessons();
       renderLessons(lessons);
-      logProgress('Dashboard re-rendered with ' + Object.keys(userProgress).length + ' progress items', 'info');
     }
 
     // pageshow – fires on every navigation to this page, including back/forward
     window.addEventListener('pageshow', refreshProgressOnShow);
 
-    // Custom event — emitted by lesson.html after a successful mark-complete
+    // custom event — emitted by lesson.html after a successful mark-complete
     window.addEventListener('progress-updated', refreshProgressOnShow);
 
     // storage – fires when localStorage is updated by a different tab/window

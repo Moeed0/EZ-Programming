@@ -106,7 +106,24 @@ export async function getUserProfile(uid) {
     return userDoc.exists() ? userDoc.data() : null;
   } catch (err) {
     console.warn('[Profile] getUserProfile failed for uid:', uid, err.code, err.message);
-    return null;   // Never throws — dashboard handles null as "Learner"
+    return null;
+  }
+}
+
+/**
+ * Read the `role` field from this user's Firestore profile.
+ * Returns 'student' if the record is missing or role is not set.
+ * Used to gate admin page access.
+ */
+export async function getUserRole() {
+  const uid = getCurrentUser()?.uid;
+  if (!uid) return 'student';
+  try {
+    const doc    = await getDoc(doc(db, 'users', uid));
+    const role   = doc.exists() ? String(doc.data().role || '') : '';
+    return role === 'admin' ? 'admin' : 'student';
+  } catch {
+    return 'student';
   }
 }
 

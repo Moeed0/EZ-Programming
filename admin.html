@@ -98,31 +98,65 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-    import { onAuthChange, apiRequest } from './js/auth.js?v=1.0';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.0';
 
-    renderNavbar();
+    renderNavbar('admin');
     renderFooter();
 
     const lessonModal = document.getElementById('lessonModal');
-    const lessonForm = document.getElementById('lessonForm');
-    const tableBody = document.getElementById('adminLessonsTable');
+    const lessonForm  = document.getElementById('lessonForm');
+    const tableBody   = document.getElementById('adminLessonsTable');
 
     // Make functions globally available for inline onclick handlers
-    window.editLesson = editLesson;
+    window.editLesson  = editLesson;
     window.deleteLesson = deleteLesson;
     window.togglePublish = togglePublish;
 
-    // Local state
     let lessons = [];
 
-    // Redirect if not logged in (Admin check happens on backend, this is just basic UI router)
-    onAuthChange((user) => {
+    /**
+     * Guard: redirect non-admin users away from this page.
+     * Reads the role from Firestore (users/{uid}.role).
+     * Only users with role === 'admin' pass through.
+     */
+    onAuthChange(async (user) => {
       if (!user) {
         window.location.href = '/login.html';
-      } else {
+        return;
+      }
+
+      try {
+        const profile = await getUserProfile(user.uid);
+        const role    = profile?.role || 'student';
+
+        if (role !== 'admin') {
+          showToast('Admin access required. Redirecting to dashboard.', 'error');
+          setTimeout(() => { window.location.href = '/dashboard.html'; }, 1500);
+          return;
+        }
+
+        // User is admin — load the lessons table
         loadAdminLessons();
+      } catch (err) {
+        console.error('Admin auth check failed:', err);
+        showToast('Failed to verify admin access.', 'error');
+        setTimeout(() => { window.location.href = '/dashboard.html'; }, 1500);
       }
     });
+
+    /**
+    * Fetches all lessons from Firestore
+    * called ONLY by a real admin user
+    */
+    async function loadLessonsFromFirestore() {
+      try {
+        const data = await apiRequest('/api/lessons?admin=true');
+        return data.lessons;
+      } catch (err) {
+        console.error('Failed to load lessons:', err);
+        return [];
+      }
+    }
 
     /**
      * Load lessons for admin table
@@ -134,7 +168,7 @@
         renderTable();
       } catch (error) {
         console.error('Failed to load lessons:', error);
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-error">Failed to load lessons. Make sure the backend is running.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-error">Failed to load lessons. Make sure you are logged in.</td></tr>`;
       }
     }
 
