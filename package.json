@@ -2,20 +2,11 @@
   "name": "ez-programming",
   "version": "1.0.0",
   "description": "EZ Programming - Interactive Python Learning Platform",
-  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "echo 'Open index.html in your browser or host on GitHub Pages.'"
   },
   "keywords": ["education", "python", "learning"],
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "firebase": "^12.13.0",
-    "firebase-admin": "^12.6.0"
-  }
+  "license": "ISC"
 }

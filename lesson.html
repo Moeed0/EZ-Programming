@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -56,8 +56,8 @@
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
   <script type="module">
-    import { renderNavbar, showToast } from '/js/navbar.js';
-    import { onAuthChange, apiRequest, getCurrentUser } from '/js/auth.js';
+    import { renderNavbar, showToast } from './js/navbar.js';
+    import { onAuthChange, apiRequest, getCurrentUser } from './js/auth.js';
 
     renderNavbar('lesson');
 
@@ -243,7 +243,7 @@
 
       let html = `
         <div style="margin-bottom: 8px;">
-          <a href="/dashboard.html" style="font-size: 0.875rem; color: var(--color-primary); font-weight: 500;">&larr; Back to Lessons</a>
+          <a href="dashboard.html" style="font-size: 0.875rem; color: var(--color-primary); font-weight: 500;">&larr; Back to Lessons</a>
         </div>
         <h1>${lesson.title}</h1>
         <p style="margin-bottom: 24px;">

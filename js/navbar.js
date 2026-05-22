@@ -13,7 +13,7 @@ export function renderNavbar(activePage = '') {
 
   navContainer.innerHTML = `
     <nav class="navbar">
-      <a href="/" class="navbar-brand">EZ Programming</a>
+      <a href="index.html" class="navbar-brand">EZ Programming</a>
 
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -22,10 +22,10 @@ export function renderNavbar(activePage = '') {
       </button>
 
       <div class="navbar-links" id="navLinks">
-        <a href="/" class="${activePage === 'home' ? 'active' : ''}">Home</a>
-        <a href="/dashboard.html" class="${activePage === 'dashboard' ? 'active' : ''}" id="navDashboard">Lessons</a>
-        <a href="/login.html" class="${activePage === 'login' ? 'active' : ''}" id="navLogin">Login</a>
-        <a href="/signup.html" id="navSignup">
+        <a href="index.html" class="${activePage === 'home' ? 'active' : ''}">Home</a>
+        <a href="dashboard.html" class="${activePage === 'dashboard' ? 'active' : ''}" id="navDashboard">Lessons</a>
+        <a href="login.html" class="${activePage === 'login' ? 'active' : ''}" id="navLogin">Login</a>
+        <a href="signup.html" id="navSignup">
           <button class="btn btn-primary btn-sm">Sign Up</button>
         </a>
         <a href="#" id="navLogout" class="hidden">
@@ -72,7 +72,7 @@ export function renderNavbar(activePage = '') {
       e.preventDefault();
       try {
         await logoutUser();
-        window.location.href = '/';
+        window.location.href = 'index.html';
       } catch (error) {
         console.error('Logout error:', error);
       }

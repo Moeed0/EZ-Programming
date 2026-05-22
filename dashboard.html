@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -46,8 +46,8 @@
   <div id="footer"></div>
 
   <script type="module">
-    import { renderNavbar, renderFooter, showToast } from '/js/navbar.js';
-    import { onAuthChange, apiRequest, getCurrentUser } from '/js/auth.js';
+    import { renderNavbar, renderFooter, showToast } from './js/navbar.js';
+    import { onAuthChange, apiRequest, getCurrentUser } from './js/auth.js';
 
     renderNavbar('dashboard');
     renderFooter();
@@ -178,7 +178,7 @@
                            lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
 
         return `
-          <a href="/lesson.html?id=${lesson.id}" style="text-decoration: none;">
+          <a href="lesson.html?id=${lesson.id}" style="text-decoration: none;">
             <div class="card lesson-card card-clickable">
               <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
               <h3>${lesson.title}</h3>

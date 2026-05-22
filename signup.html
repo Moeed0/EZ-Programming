@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -48,7 +48,7 @@
       </form>
 
       <p class="auth-footer">
-        Already have an account? <a href="/login.html">Log In</a>
+        Already have an account? <a href="login.html">Log In</a>
       </p>
     </div>
   </div>
@@ -57,8 +57,8 @@
   <div id="footer"></div>
 
   <script type="module">
-    import { renderNavbar, renderFooter, showToast } from '/js/navbar.js';
-    import { signupUser, onAuthChange } from '/js/auth.js';
+    import { renderNavbar, renderFooter, showToast } from './js/navbar.js';
+    import { signupUser, onAuthChange } from './js/auth.js';
 
     renderNavbar('signup');
     renderFooter();
@@ -66,7 +66,7 @@
     // Redirect if already logged in
     onAuthChange((user) => {
       if (user) {
-        window.location.href = '/dashboard.html';
+        window.location.href = 'dashboard.html';
       }
     });
 
@@ -109,7 +109,7 @@
 
         await signupUser(name, email, password);
         showToast('Account created successfully!', 'success');
-        window.location.href = '/dashboard.html';
+        window.location.href = 'dashboard.html';
       } catch (error) {
         console.error('Signup error:', error);
         let message = 'Something went wrong. Please try again.';
