@@ -189,9 +189,7 @@
       const totalLessons = lessons.length;
       const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
-      // Update progress bar
-      document.getElementById('progressText').textContent = `${progressPercent}%`;
-      document.getElementById('progressFill').style.width = `${progressPercent}%`;
+      // Update progress bar (Removed as per user request)
 
       if (lessons.length === 0) {
         container.innerHTML = `
