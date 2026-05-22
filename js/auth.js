@@ -180,14 +180,21 @@ export async function updateProgress(lessonId, status) {
   // 2. Try to save to Firestore
   try {
     const docId = `${user.uid}_${lessonId}`;
-    const dbData = { ...progressData, updatedAt: serverTimestamp() };
+    // Prepare clean data for Firestore (remove any non-Firestore sentinels)
+    const dbData = { 
+      userId: user.uid,
+      lessonId: String(lessonId),
+      status: String(status),
+      updatedAt: serverTimestamp() 
+    };
     if (status === 'completed') dbData.completedAt = serverTimestamp();
     
-    // Use setDoc with merge: true to avoid needing a query/index
     await setDoc(doc(db, "progress", docId), dbData, { merge: true });
-    console.log('Progress saved to cloud');
+    console.log('Progress saved successfully to cloud');
   } catch (err) {
-    console.error('Firestore progress update failed:', err);
+    console.error('Firestore Error Details:', err.code, err.message);
+    // Rethrow to let the UI show the specific error if needed
+    throw err;
   }
 }
 
