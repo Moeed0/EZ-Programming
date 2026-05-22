@@ -36,18 +36,24 @@ async function withTimeout(promise, ms = 10000) {
 // ---- AUTH FUNCTIONS ----
 
 export async function signupUser(name, email, password) {
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const user = userCredential.user;
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-  // Save profile directly to Firestore
-  await setDoc(doc(db, "users", user.uid), {
-    name,
-    email,
-    role: 'student',
-    createdAt: serverTimestamp()
-  });
+    // Save profile directly to Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      name,
+      email,
+      role: 'student',
+      createdAt: serverTimestamp()
+    });
 
-  return user;
+    return user;
+  } catch (err) {
+    console.error('[Auth] signupUser failed:', err.code, err.message);
+    // Re-throw so the signup page can show a friendly message
+    throw err;
+  }
 }
 
 export async function loginUser(email, password) {
@@ -55,7 +61,23 @@ export async function loginUser(email, password) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (err) {
-    console.error('Firebase Login Error:', err.code, err.message);
+    console.error('[Auth] loginUser failed:', err.code, err.message);
+
+    // Attach a friendly default message directly to the error
+    // so the signup/login pages can display it without another lookup.
+    const friendlyMessages = {
+      'auth/invalid-credential':       'Invalid email or password.',
+      'auth/user-not-found':           'No account found with this email.',
+      'auth/wrong-password':           'Incorrect password.',
+      'auth/invalid-email':            'Please enter a valid email address.',
+      'auth/user-disabled':            'This account has been disabled. Contact support.',
+      'auth/too-many-requests':        'Too many failed attempts. Please try again later.',
+      'auth/network-request-failed':   'Network error. Check your internet connexion.',
+      'auth/operation-not-allowed':    'Email/password sign-in is disabled. Contact support.',
+      'auth/email-already-in-use':     'An account with this email already exists.',
+      'auth/weak-password':            'Password is too weak. Use at least 8 characters.',
+    };
+    err._friendly = friendlyMessages[err.code] || 'Something went wrong. Please try again.';
     throw err;
   }
 }

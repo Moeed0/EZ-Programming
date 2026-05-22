@@ -84,13 +84,8 @@
         window.location.href = 'dashboard.html';
       } catch (error) {
         console.error('Login error:', error);
-        let message = 'Something went wrong. Please try again.';
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          message = 'Invalid email or password.';
-        } else if (error.code === 'auth/too-many-requests') {
-          message = 'Too many failed attempts. Please try again later.';
-        }
-        errorEl.textContent = message;
+        // _friendly is set by auth.js loginUser for all known codes
+        errorEl.textContent = error._friendly || 'Something went wrong. Please try again.';
         errorEl.classList.remove('hidden');
         loginBtn.disabled = false;
         loginBtn.textContent = 'Log In';

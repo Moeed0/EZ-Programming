@@ -112,15 +112,8 @@
         window.location.href = 'dashboard.html';
       } catch (error) {
         console.error('Signup error:', error);
-        let message = 'Something went wrong. Please try again.';
-        if (error.code === 'auth/email-already-in-use') {
-          message = 'An account with this email already exists.';
-        } else if (error.code === 'auth/weak-password') {
-          message = 'Password is too weak. Use at least 8 characters.';
-        } else if (error.code === 'auth/invalid-email') {
-          message = 'Please enter a valid email address.';
-        }
-        errorEl.textContent = message;
+        // _friendly is set by auth.js loginUser/signupUser for all known codes
+        errorEl.textContent = error._friendly || 'Something went wrong. Please try again.';
         errorEl.classList.remove('hidden');
         signupBtn.disabled = false;
         signupBtn.textContent = 'Sign Up';
