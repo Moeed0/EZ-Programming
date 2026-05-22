@@ -191,47 +191,49 @@
     }
 
     /**
-     * Load user progress from API (Firestore via auth.js).
-     * Returns a map:  { "lesson-1": "completed", "lesson-2": "in-progress", … }
+     * Load user progress from Firestore.
+     * Uses getProgress() via apiRequest — returns an array of
+     *   { lessonId, userId, status, completedAt }
      */
     async function loadProgress(user) {
       try {
         if (!user) {
-          logProgress('No user — skipping progress load', 'warn');
+          logProgress('loadProgress: user is null — returning {}', 'warn');
           return {};
         }
 
-        logProgress('Fetching progress for uid: ' + user.uid, 'info');
+        logProgress('loadProgress | uid: ' + user.uid, 'info');
+        // apiRequest wraps getProgress() result in { progress: [...] }
+        // getProgress() itself returns a flat array.
         const data = await apiRequest('/api/progress');
+        const items = Array.isArray(data)               // if called directly
+          ? data
+          : (data && Array.isArray(data.progress)        // if called via apiRequest wrapper
+            ? data.progress
+            : []);
 
-        // apiRequest calls getProgress() which returns an ARRAY of
-        // { lessonId, status, userId, … } objects
-        const items = data && Array.isArray(data.progress) ? data.progress : [];
+        logProgress('getProgress returned ' + items.length + ' items from Firestore', 'info');
+        items.forEach(p =>
+          logProgress('  ✔ lessonId=' + p.lessonId + '  status=' + p.status, 'success')
+        );
 
-        logProgress('getProgress() returned ' + items.length + ' items: ' + JSON.stringify(items), 'info');
-
-        // Build { lessonId: status } map for fast look-up in renderLessons()
         const progressMap = {};
         items.forEach(p => {
-          const lessonId = String(p.lessonId || p._id || '').trim();
-          const status    = String(p.status || '').trim();
-          if (lessonId) {
-            progressMap[lessonId] = status;
-            logProgress('  → progressMap["' + lessonId + '"] = "' + status + '"', 'success');
-          }
+          const key = String(p.lessonId || '').trim();
+          if (key) progressMap[key] = String(p.status || '');
         });
 
-        if (Object.keys(progressMap).length === 0 && items.length === 0) {
-          logProgress('No progress documents found in Firestore. ' +
-            'Check: (1) user is logged in, (2) mark-complete button was clicked, ' +
-            '(3) Firestore rules allow read, (4) firestore.rules deployed.', 'warn');
+        if (Object.keys(progressMap).length === 0) {
+          logProgress('progressMap is EMPTY after getProgress(). ' +
+            'Possible causes: (1) No progress doc in Firestore for uid: ' + user.uid + ', ' +
+            '(2) userId field mismatch: doc stores a different uid, ' +
+            '(3) Firestore rules rejected the query silently, ' +
+            '(4) firestore.rules not yet deployed', 'warn');
         }
-
         return progressMap;
-      } catch (error) {
-        logProgress('loadProgress FAILED: ' + (error.code || '') + ' ' + error.message, 'error');
-        // Show full error detail for viva debugging
-        console.error('[Dashboard] loadProgress FATAL:', error);
+      } catch (err) {
+        logProgress('loadProgress FAILED: ' + (err.code || err.name || '') + ' — ' + (err.message || ''), 'error');
+        console.error('[Dashboard] loadProgress:', err);
         return {};
       }
     }

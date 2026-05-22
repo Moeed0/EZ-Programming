@@ -173,18 +173,22 @@ export async function getLessonById(lessonId) {
  * Each document ID is  `${uid}_${lessonId}`  (e.g. uid_lesson-1).
  */
 async function getAllUserProgress() {
-  const user = auth.currentUser;
+  const user = getCurrentUser();
   if (!user) return [];
 
+  const uid = String(user.uid).trim();
   try {
-    const q    = query(collection(db, "progress"), where("userId", "==", user.uid));
-    const snap = await withTimeout(getDocs(q), 8000);
+    // Fetch ALL progress docs, filter in JS (avoids composite-index + list-rule issues)
+    const snap = await withTimeout(getDocs(collection(db, "progress")), 10000);
+    const mine = snap.docs
+      .filter(d => String(d.get('userId') || '') === uid)
+      .map(d => ({ lessonId: d.id, ...d.data() }));
 
-    console.log('[Progress] getAllUserProgress fetched', snap.size, 'for uid:', user.uid);
-
-    return snap.docs.map(d => ({ lessonId: d.id, ...d.data() }));
+    console.log('[Progress] getAllUserProgress fetched', mine.length, 'docs for uid:', uid,
+                '| total in collection:', snap.size);
+    return mine;
   } catch (err) {
-    console.warn('[Progress] getAllUserProgress error:', err.code, err.message);
+    console.error('[Progress] getAllUserProgress error:', err.code, err.message);
     return [];
   }
 }
@@ -193,54 +197,71 @@ async function getAllUserProgress() {
 
 export async function getProgress() {
   const user = getCurrentUser();
+  const uid  = user ? String(user.uid).trim() : '';
+  const localKey  = 'progress_' + uid;
+  const localData = (() => { try { return JSON.parse(localStorage.getItem(localKey) || '[]'); } catch (_) { return []; } })();
+
+  console.log('[Progress] getProgress START | uid:', uid, '| localData:', localData.length, 'items');
+
   if (!user) {
-    console.warn('[Progress] getProgress: no authenticated user — returning []');
+    console.warn('[Progress] getProgress: not authenticated — returning []');
     return [];
   }
 
-  const localKey  = `progress_${user.uid}`;
-  const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
-
   try {
-    // Read progress docs from the flat `progress` collection,
-    // filtered by userId field so each user sees only their own records.
-    // Composite doc ID = {uid}_{lessonId} prevents duplicates.
-    const q    = query(collection(db, "progress"), where("userId", "==", user.uid));
-    const snap = await withTimeout(getDocs(q), 8000);
-    console.log('[Progress] Firestore query returned', snap.size, 'docs for uid:', user.uid);
+    // ── Fetch ALL progress docs, filter in JS (no composite index / query rule needed) ──
+    const allSnap  = await withTimeout(getDocs(collection(db, "progress")), 10000);
+    const allCount = allSnap.size;
+    let   matched  = 0;
 
-    // If the query itself timed out or was rejected by rules, snap.size === 0 here
-    // and the catch block below handles the silent-index-miss case.
-    if (snap.empty && localData.length > 0) {
-      console.warn('[Progress] Firestore returned 0 docs but localStorage has', localData.length, 'items — possible Firestore rule or index issue');
-    }
+    console.log('[Progress] getProgress | Firestore TOTAL docs in progress collection:', allCount);
 
-    const firestoreData = snap.docs.map(d => {
-      const data = d.data();
-      // Prefer the stored lessonId field; fall back to stripping uid_ prefix from doc ID
-      return {
-        lessonId: String(data.lessonId || String(d.id).replace(`${user.uid}_`, '')),
-        status:   String(data.status || ''),
-        userId:   data.userId,
-        ...(data.completedAt ? { completedAt: data.completedAt } : {})
-      };
+    const mine = [];
+    allSnap.forEach(docSnap => {
+      const docId   = String(docSnap.id);
+      const docUid  = String(docSnap.get('userId') || '');
+      const match   = docUid === uid;
+
+      if (!match && matched === 0 && docUid) {
+        // Log first non-matching doc to understand the mismatch
+        console.log('[Progress] getProgress | non-matching doc | id:', docId, '| stored userId:', docUid, '| expected uid:', uid);
+      }
+
+      if (match) {
+        matched++;
+        const data = docSnap.data();
+        const lessonId = String(data.lessonId || docId.replace(uid + '_', ''));
+        mine.push({
+          lessonId,
+          userId:   docUid,
+          status:   String(data.status || ''),
+          completedAt: data.completedAt || null,
+          _docId:   docId
+        });
+      }
     });
 
-    // Merge fresh Firestore data with localStorage fallback
-    const merged = [...firestoreData];
+    console.log('[Progress] getProgress | matched', matched, 'docs for uid:', uid,
+                mine.length ? '| lessons:' + mine.map(m => m.lessonId + ':' + m.status).join(', ') : '');
+
+    // If Firestore returned 0 for THIS user but localData is non-empty
+    if (matched === 0 && localData.length > 0) {
+      console.warn('[Progress] getProgress | Firestore 0 but localStorage has',
+                   localData.length, 'items — Firestore rule or sync issue. Falling back to local.');
+    }
+
+    const merged = [...mine];
     localData.forEach(lp => {
-      const match = merged.find(fp => fp.lessonId === lp.lessonId);
-      if (!match) merged.push(lp);
+      const has = merged.find(m => m.lessonId === lp.lessonId || m._docId === lp.docId);
+      if (!has) merged.push(lp);
     });
 
     localStorage.setItem(localKey, JSON.stringify(merged));
-    console.log('[Progress] getProgress returning', merged.length, 'items:', merged);
+    console.log('[Progress] getProgress END | returning', merged.length, 'items');
     return merged;
   } catch (err) {
-    console.error('[Progress] getProgress CATCH — Firestore read failed:', err.code, err.message);
-    console.warn('[Progress] falling back to localStorage, which has', localData.length, 'items');
-    // Return local cache without throwing — dashboard will show existing data
-    return [...localData];
+    console.error('[Progress] getProgress CATCH:', err.code || '', err.message);
+    return localData.length ? [...localData] : [];
   }
 }
 
@@ -369,7 +390,7 @@ export async function apiRequest(endpoint, options = {}) {
     return data;
   }
 
-  if (endpoint === '/api/progress' && method === 'GET') {
+  if (endpoint === '/api/progress' && (!method || method === 'GET')) {
     return { progress: await getProgress() };
   }
 
