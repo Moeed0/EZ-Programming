@@ -46,6 +46,24 @@
         <p>Loading lessons...</p>
       </div>
     </div>
+
+    <!-- ═══════════════ Progress Debug Panel ═══════════════ -->
+    <!-- Visible on every page load — no DevTools needed.
+         Screenshot this panel for viva if progress is not showing.
+         Collapse/expand with the button below. -->
+    <div style="margin: 16px 0;">
+      <button type="button" class="btn btn-outline btn-sm" id="toggleDebugBtn"
+              style="margin-bottom: 4px;">
+        🔧 Progress Debug Panel
+      </button>
+      <div id="debugPanel" style="display:none; background:#1e293b; color:#e2e8f0;
+        border:1px solid #334155; border-radius:8px; padding:12px;
+        font:12px/1.6 'Menlo','Monaco','Courier New',monospace;
+        max-height:280px; overflow-y:auto;">
+        <div class="log-entry log-info">Waiting for events…</div>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
   </div>
 
   <!-- Footer -->
@@ -158,26 +176,62 @@
     }
 
     /**
-     * Load user progress from API
+     * Debug helper — writes to the on-page progress debug panel.
+     * This is visible without opening DevTools, so you can screenshot it for viva.
+     */
+    function logProgress(msg, type = 'info') {
+      const panel = document.getElementById('debugPanel');
+      if (!panel) return;
+      const ts  = new Date().toLocaleTimeString();
+      const cls = type === 'error' ? 'log-error'
+               : type === 'success' ? 'log-success'
+               : type === 'warn'    ? 'log-warn' : 'log-info';
+      panel.innerHTML = `<div class="log-entry ${cls}">[${ts}] ${msg}</div>` + panel.innerHTML;
+      console.log('[Progress]', msg);
+    }
+
+    /**
+     * Load user progress from API (Firestore via auth.js).
+     * Returns a map:  { "lesson-1": "completed", "lesson-2": "in-progress", … }
      */
     async function loadProgress(user) {
       try {
-        if (!user) return {};
-
-        const data = await apiRequest('/api/progress');
-        const progressMap = {};
-        
-        console.log('Progress data received:', data.progress);
-        
-        if (data && data.progress) {
-          data.progress.forEach(p => {
-            // Force status to string and handle both numeric/string IDs
-            progressMap[String(p.lessonId)] = String(p.status);
-          });
+        if (!user) {
+          logProgress('No user — skipping progress load', 'warn');
+          return {};
         }
+
+        logProgress('Fetching progress for uid: ' + user.uid, 'info');
+        const data = await apiRequest('/api/progress');
+
+        // apiRequest calls getProgress() which returns an ARRAY of
+        // { lessonId, status, userId, … } objects
+        const items = data && Array.isArray(data.progress) ? data.progress : [];
+
+        logProgress('getProgress() returned ' + items.length + ' items: ' + JSON.stringify(items), 'info');
+
+        // Build { lessonId: status } map for fast look-up in renderLessons()
+        const progressMap = {};
+        items.forEach(p => {
+          const lessonId = String(p.lessonId || p._id || '').trim();
+          const status    = String(p.status || '').trim();
+          if (lessonId) {
+            progressMap[lessonId] = status;
+            logProgress('  → progressMap["' + lessonId + '"] = "' + status + '"', 'success');
+          }
+        });
+
+        if (Object.keys(progressMap).length === 0 && items.length === 0) {
+          logProgress('No progress documents found in Firestore. ' +
+            'Check: (1) user is logged in, (2) mark-complete button was clicked, ' +
+            '(3) Firestore rules allow read, (4) firestore.rules deployed.', 'warn');
+        }
+
         return progressMap;
       } catch (error) {
-        console.error('Could not load progress:', error);
+        logProgress('loadProgress FAILED: ' + (error.code || '') + ' ' + error.message, 'error');
+        // Show full error detail for viva debugging
+        console.error('[Dashboard] loadProgress FATAL:', error);
         return {};
       }
     }
@@ -272,36 +326,57 @@
       }
     });
 
+    document.getElementById('toggleDebugBtn').addEventListener('click', function () {
+      const panel = document.getElementById('debugPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      this.textContent = panel.style.display === 'none'
+        ? '\u{1F527} Progress Debug Panel'
+        : '\u{2715} Progress Debug Panel';
+    });
+
     document.getElementById('forceSyncBtn').addEventListener('click', async () => {
       const user = getCurrentUser();
       if (!user) {
+        logProgress('Force Sync: user is null', 'error');
         alert("You are not logged in!");
         return;
       }
       showToast("Manual Syncing...", "info");
-     userProgress = await loadProgress(user);
-      const lessons = await loadLessons();
-      renderLessons(lessons);
-      alert(`Sync Complete!\nUser ID: ${user.uid}\nItems Found: ${Object.keys(userProgress).length}`);
+      logProgress('Force Sync — refreshing progress for uid: ' + user.uid, 'info');
+      try {
+        userProgress = await loadProgress(user);
+        const lessons = await loadLessons();
+        renderLessons(lessons);
+        const count = Object.keys(userProgress).length;
+        logProgress('Sync Complete — items loaded from Firestore: ' + count, 'success');
+        alert(`Sync Complete!\nUser ID: ${user.uid}\nItems Found: ${count}`);
+      } catch (err) {
+        logProgress('Force Sync FAILED: ' + err.code + ' ' + err.message, 'error');
+      }
     });
 
     /**
-     * Re-load progress whenever the page becomes visible again.
-     * This fires on direct navigation, the browser back/forward button,
-     * or when a freshly saved lesson page re-activates this tab.
+     * Force a full progress re-render. Called by pageshow,
+     * the storage event, and the custom 'progress-updated' event
+     * emitted by lesson.html after a successful mark-complete.
      */
     async function refreshProgressOnShow() {
       const user = getCurrentUser();
       if (!user) return;
+      logProgress('refreshProgressOnShow() triggered', 'info');
       userProgress = await loadProgress(user);
       const lessons = await loadLessons();
       renderLessons(lessons);
+      logProgress('Dashboard re-rendered with ' + Object.keys(userProgress).length + ' progress items', 'info');
     }
 
     // pageshow – fires on every navigation to this page, including back/forward
     window.addEventListener('pageshow', refreshProgressOnShow);
 
-    // storage – fires when localStorage is updated by a different tab/window (or same-origin navigation)
+    // Custom event — emitted by lesson.html after a successful mark-complete
+    window.addEventListener('progress-updated', refreshProgressOnShow);
+
+    // storage – fires when localStorage is updated by a different tab/window
     window.addEventListener('storage', (e) => {
       if (e.key && e.key.startsWith('progress_')) {
         refreshProgressOnShow();

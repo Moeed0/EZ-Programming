@@ -367,12 +367,20 @@
         markBtn.disabled = true;
         markBtn.textContent = 'Saving...';
 
+        console.log('[Progress] Calling updateProgress | lesson:', currentLessonId, '→ completed');
         await updateProgress(currentLessonId, 'completed');
-        
+
         showToast('Lesson marked as completed!', 'success');
         markBtn.textContent = 'Completed ✓';
-        markBtn.classList.remove('btn-primary');
+        markBtn.classList.remove('btn-secondary');
         markBtn.classList.add('btn-success');
+
+        console.log('[Progress] updateProgress succeeded. Dispatching progress-updated event...');
+        // Wake any open dashboard tab immediately — no page refresh needed
+        window.dispatchEvent(new Event('progress-updated'));
+
+        // Also write a marker to sessionStorage so the storage-listener path fires
+        try { sessionStorage.setItem('progress_sync', Date.now()); } catch (_) {}
       } catch (error) {
         console.error('Progress update error:', error);
         showToast(`Cloud sync failed: ${error.message || 'Check your internet'}`, 'info');

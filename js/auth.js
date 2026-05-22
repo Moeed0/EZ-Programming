@@ -192,24 +192,36 @@ async function getAllUserProgress() {
 // ── PROGRESS FUNCTIONS ─────────────────────────────────────────────────────────
 
 export async function getProgress() {
-  const user = auth.currentUser;
-  if (!user) return [];
+  const user = getCurrentUser();
+  if (!user) {
+    console.warn('[Progress] getProgress: no authenticated user — returning []');
+    return [];
+  }
 
   const localKey  = `progress_${user.uid}`;
   const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
 
   try {
-    // Query progress docs by userId — composite doc ID prevents duplicates
+    // Read progress docs from the flat `progress` collection,
+    // filtered by userId field so each user sees only their own records.
+    // Composite doc ID = {uid}_{lessonId} prevents duplicates.
     const q    = query(collection(db, "progress"), where("userId", "==", user.uid));
     const snap = await withTimeout(getDocs(q), 8000);
+    console.log('[Progress] Firestore query returned', snap.size, 'docs for uid:', user.uid);
+
+    // If the query itself timed out or was rejected by rules, snap.size === 0 here
+    // and the catch block below handles the silent-index-miss case.
+    if (snap.empty && localData.length > 0) {
+      console.warn('[Progress] Firestore returned 0 docs but localStorage has', localData.length, 'items — possible Firestore rule or index issue');
+    }
 
     const firestoreData = snap.docs.map(d => {
       const data = d.data();
+      // Prefer the stored lessonId field; fall back to stripping uid_ prefix from doc ID
       return {
-        lessonId: data.lessonId || String(d.id).replace(`${user.uid}_`, ''),
+        lessonId: String(data.lessonId || String(d.id).replace(`${user.uid}_`, '')),
         status:   String(data.status || ''),
         userId:   data.userId,
-        updatedAt: data.updatedAt,
         ...(data.completedAt ? { completedAt: data.completedAt } : {})
       };
     });
@@ -222,10 +234,12 @@ export async function getProgress() {
     });
 
     localStorage.setItem(localKey, JSON.stringify(merged));
-    console.log('[Progress] Loaded', merged.length, 'items from Firestore for uid:', user.uid);
+    console.log('[Progress] getProgress returning', merged.length, 'items:', merged);
     return merged;
   } catch (err) {
-    console.warn('[Progress] Firestore read failed, using local cache:', err.code);
+    console.error('[Progress] getProgress CATCH — Firestore read failed:', err.code, err.message);
+    console.warn('[Progress] falling back to localStorage, which has', localData.length, 'items');
+    // Return local cache without throwing — dashboard will show existing data
     return [...localData];
   }
 }
