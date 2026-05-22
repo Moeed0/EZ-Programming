@@ -20,7 +20,7 @@
     <div class="dashboard-header">
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <div>
-          <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h4>
+          <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h1>
           <p class="text-secondary">Browse available lessons and track your learning. Click a lesson to begin!</p>
         </div>
       </div>
@@ -73,9 +73,9 @@
         if (!p) return;
         const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
         const cls = type === 'err' ? 'log-error'
-                   : type === 'warn' ? 'log-warn'
-                   : type === 'ok'   ? 'log-success'
-                   : 'log-info';
+                  : type === 'warn' ? 'log-warn'
+                  : type === 'ok'   ? 'log-success'
+                  : 'log-info';
         p.innerHTML = '<div class="log-entry ' + cls + '">[' + ts + '] ' + msg + '</div>' + p.innerHTML;
         console.log('[Dash]', msg);
         if (p.scrollHeight > 400) p.scrollTop = p.scrollHeight - 400;
@@ -229,7 +229,7 @@
           document.getElementById('profileEmail').textContent = user.email;
         });
 
-        const lessonsAndProgress = await Promise.all([loadLessons(), loadProgressFromFirestore()]);
+        var lessonsAndProgress = await Promise.all([loadLessons(), loadProgressFromFirestore()]);
         userProgress = lessonsAndProgress[1];
         renderLessons(lessonsAndProgress[0]);
       }
@@ -253,6 +253,4 @@
       });
     </script>
   </body>
-</html>
-</body>
 </html>

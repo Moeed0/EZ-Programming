@@ -98,7 +98,7 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.0';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing } from './js/auth.js?v=1.0';
 
     renderNavbar('admin');
     renderFooter();
@@ -108,8 +108,8 @@
     const tableBody   = document.getElementById('adminLessonsTable');
 
     // Make functions globally available for inline onclick handlers
-    window.editLesson  = editLesson;
-    window.deleteLesson = deleteLesson;
+    window.editLesson    = editLesson;
+    window.deleteLesson  = deleteLesson;
     window.togglePublish = togglePublish;
 
     let lessons = [];
@@ -126,8 +126,11 @@
       }
 
       try {
+        // Always bootstrap the profile so it exists even if signup failed to write it
+        await createUserProfileIfMissing(user.uid);
+
         const profile = await getUserProfile(user.uid);
-        const role    = profile?.role || 'student';
+        const role    = (profile && profile.role) || 'student';
 
         if (role !== 'admin') {
           showToast('Admin access required. Redirecting to dashboard.', 'error');
@@ -135,7 +138,6 @@
           return;
         }
 
-        // User is admin — load the lessons table
         loadAdminLessons();
       } catch (err) {
         console.error('Admin auth check failed:', err);

@@ -330,7 +330,7 @@ export async function updateProgress(lessonId, status) {
     console.log('[Progress] updateProgress — saved | doc:', docId, '→', statusStr);
   } catch(err) {
     console.error('[Progress] updateProgress — Firestore write FAILED:', err.code, err.message);
-    // restore localStorage to pre-write state
+    // restore localStorage to pre-write state so the optimistic UI doesn't lie
     localStorage.setItem('progress_' + user.uid, JSON.stringify(localProgress));
     throw err;
   }
@@ -401,8 +401,8 @@ export async function apiRequest(endpoint, options) {
   // ── Progress ─────────────────────────────────────────────────────────────
   // When method is missing (GET) or explicitly === 'GET'
   if (endpoint === '/api/progress' && (!method || method === 'GET')) {
-    var progressData = await getProgress();          // returns a plain array
-    return { progress: progressData };               // wrap for apiRequest callers
+    var progressData = await getProgress();
+    return { progress: progressData };
   }
 
   if (endpoint === '/api/progress/update' && method === 'POST') {
