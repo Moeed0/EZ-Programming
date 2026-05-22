@@ -18,17 +18,18 @@
   <div class="dashboard-container">
     <!-- Header -->
     <div class="dashboard-header">
-      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 32px;">
         <div>
-          <h1 id="welcomeText">My Lessons</h1>
-          <p>Browse available lessons and track your learning progress.</p>
+          <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h1>
+          <p class="text-secondary">Browse available lessons and track your learning progress.</p>
         </div>
         
-        <div class="card" style="padding: 16px 24px; min-width: 280px; display: flex; align-items: center; gap: 16px; background-color: #F8FAFC;">
-          <div style="width: 48px; height: 48px; border-radius: 50%; background-color: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem;" id="userInitials">?</div>
-          <div>
-            <h4 style="margin: 0; font-size: 1rem;" id="profileName">Loading...</h4>
-            <p style="margin: 0; font-size: 0.8125rem; color: var(--color-text-secondary);" id="profileEmail">...</p>
+        <!-- User Profile Card (Top Right) -->
+        <div class="card" style="padding: 12px 20px; min-width: 260px; display: flex; align-items: center; gap: 16px; background-color: white; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background-color: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem;" id="userInitials">?</div>
+          <div style="overflow: hidden;">
+            <h4 style="margin: 0; font-size: 0.9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="profileName">Loading...</h4>
+            <p style="margin: 0; font-size: 0.75rem; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="profileEmail">...</p>
           </div>
         </div>
       </div>

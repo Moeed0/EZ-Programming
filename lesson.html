@@ -375,7 +375,10 @@
         markBtn.classList.add('btn-success');
       } catch (error) {
         console.error('Progress update error:', error);
-        showToast('Status saved locally.', 'info');
+        showToast('Cloud sync failed, status saved locally.', 'info');
+        const markBtn = document.getElementById('markCompleteBtn');
+        markBtn.disabled = false;
+        markBtn.textContent = 'Mark as Complete';
       }
     }
 

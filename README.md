@@ -13,7 +13,7 @@ You might see a GitHub alert about a leaked API key.
 
 ## 🚀 Live Demo
 Once you enable GitHub Pages in your repo settings, your site will be live at:
-`https://your-username.github.io/EZ-Programming/`
+`https://Moeed0.github.io/EZ-Programming/`
 
 ## 🛠️ How it works
 - **Frontend-only**: All logic runs in the browser. 

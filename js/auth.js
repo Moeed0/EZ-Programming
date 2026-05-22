@@ -19,6 +19,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -167,21 +168,15 @@ export async function updateProgress(lessonId, status) {
 
   // 2. Try to save to Firestore
   try {
-    const q = query(collection(db, "progress"), where("userId", "==", user.uid), where("lessonId", "==", lessonId));
-    const snapshot = await withTimeout(getDocs(q), 5000);
-
+    const docId = `${user.uid}_${lessonId}`;
     const dbData = { ...progressData, updatedAt: serverTimestamp() };
     if (status === 'completed') dbData.completedAt = serverTimestamp();
-
-    if (!snapshot.empty) {
-      await updateDoc(snapshot.docs[0].ref, dbData);
-    } else {
-      dbData.startedAt = serverTimestamp();
-      await addDoc(collection(db, "progress"), dbData);
-    }
+    
+    // Use setDoc with merge: true to avoid needing a query/index
+    await setDoc(doc(db, "progress", docId), dbData, { merge: true });
+    console.log('Progress saved to cloud');
   } catch (err) {
     console.error('Firestore progress update failed:', err);
-    // LocalStorage still has it, so it's "fine" for the UI
   }
 }
 
