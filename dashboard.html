@@ -271,6 +271,12 @@
 
       const lessons = await loadLessons();
       renderLessons(lessons);
+      
+      // Temporary Diagnostic for the user
+      const completedCount = Object.values(userProgress).filter(s => s === 'completed').length;
+      if (Object.keys(userProgress).length > 0) {
+        showToast(`Loaded ${Object.keys(userProgress).length} cloud records. ${completedCount} completed.`, 'success');
+      }
     });
   </script>
 </body>
