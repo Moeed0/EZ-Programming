@@ -55,184 +55,206 @@
         <p>Loading lessons...</p>
       </div>
     </div>
-  </div>
 
-  <!-- Footer -->
-  <div id="footer"></div>
+    <!-- Footer -->
+    <div id="footer"></div>
 
-  <script type="module">
-    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.0';
+    <script type="module">
+      import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
+      import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.0';
 
-    renderNavbar('dashboard');
-    renderFooter();
+      renderNavbar('dashboard');
+      renderFooter();
 
-    // Sample lessons data (used when backend is not available)
-    const sampleLessons = [
-      { id: 'lesson-1',  title: 'Hello World in Python',      topic: 'Introduction',      difficulty: 'beginner',    orderIndex: 1,  isPublished: true },
-      { id: 'lesson-2',  title: 'Variables and Data Types',   topic: 'Basics',            difficulty: 'beginner',    orderIndex: 2,  isPublished: true },
-      { id: 'lesson-3',  title: 'Conditional Statements',     topic: 'Control Flow',      difficulty: 'beginner',    orderIndex: 3,  isPublished: true },
-      { id: 'lesson-4',  title: 'Loops - For and While',      topic: 'Control Flow',      difficulty: 'intermediate',orderIndex: 4,  isPublished: true },
-      { id: 'lesson-5',  title: 'Functions in Python',        topic: 'Functions',         difficulty: 'intermediate',orderIndex: 5,  isPublished: true },
-      { id: 'lesson-6',  title: 'Lists and Tuples',           topic: 'Data Structures',   difficulty: 'intermediate',orderIndex: 6,  isPublished: true },
-      { id: 'lesson-7',  title: 'Dictionaries (Key-Value)',   topic: 'Data Structures',   difficulty: 'intermediate',orderIndex: 7,  isPublished: true },
-      { id: 'lesson-8',  title: 'List Comprehensions',        topic: 'Advanced Basics',   difficulty: 'intermediate',orderIndex: 8,  isPublished: true },
-      { id: 'lesson-9',  title: 'Error Handling (Try/Except)',topic: 'Error Handling',    difficulty: 'intermediate',orderIndex: 9,  isPublished: true },
-      { id: 'lesson-10', title: 'File I/O Basics',            topic: 'File Handling',     difficulty: 'advanced',    orderIndex: 10, isPublished: true },
-    ];
-
-    let userProgress = {};
-
-    /**
-     * Load lessons from API or use sample data
-     */
-    async function loadLessons() {
-      try {
-        const data = await apiRequest('/api/lessons');
-        return data.lessons.length > 0 ? data.lessons : sampleLessons;
-      } catch (error) {
-        console.log('Using sample lessons data:', error.message);
-        return sampleLessons;
-      }
-    }
-
-    /**
-     * Load user progress from Firestore.
-     * apiRequest wraps getProgress() in { progress: [...] }
-     */
-    async function loadProgress(user) {
-      try {
-        if (!user) return {};
-        const data = await apiRequest('/api/progress');
-        const items = Array.isArray(data)               // direct import
-          ? data
-          : (data && Array.isArray(data.progress)        // via apiRequest wrapper
-            ? data.progress
-            : []);
-        return items;
-      } catch (err) {
-        console.warn('loadProgress error:', err.code, err.message);
-        return [];
-      }
-    }
-
-    /**
-     * Update the progress bar and percentage label.
-     * Called after loadProgress + renderLessons completes.
-     */
-    function updateProgressBar(completedCount, totalLessons) {
-      const pct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
-      const fill = document.getElementById('progressFill');
-      const lbl  = document.getElementById('progressPercent');
-      if (fill) fill.style.width = pct + '%';
-      if (lbl)  lbl.textContent  = pct + '%';
-    }
-
-    /**
-     * Render lesson cards and update the progress bar
-     */
-    function renderLessons(lessons) {
-      const container = document.getElementById('lessonsContainer');
-      const completedCount = Object.values(userProgress).filter(s => s === 'completed').length;
-      const totalLessons   = lessons.length;
-
-      updateProgressBar(completedCount, totalLessons);
-
-      if (lessons.length === 0) {
-        container.innerHTML = `
-          <div class="text-center" style="padding: 60px 24px;">
-            <p class="text-secondary">No lessons available yet. Check back soon!</p>
-          </div>`;
-        return;
+      // ── Debug helpers ─────────────────────────────────────────────────────
+      function D(msg, type) {
+        type = type || 'info';
+        const p = document.getElementById('debugPanel');
+        if (!p) return;
+        const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
+        const cls = type === 'err' ? 'log-error'
+                  : type === 'warn' ? 'log-warn'
+                  : type === 'ok'   ? 'log-success'
+                  : 'log-info';
+        p.innerHTML = '<div class="log-entry ' + cls + '">[' + ts + '] ' + msg + '</div>' + p.innerHTML;
+        console.log('[Dash]', msg);
+        if (p.scrollHeight > 400) p.scrollTop = p.scrollHeight - 400;
       }
 
-      const cardsHTML = lessons.map(lesson => {
-        const lessonId  = String(lesson.id);
-        const status    = userProgress[lessonId] || '';
-        let   statusText = '';
-        let   statusClass = '';
+      document.getElementById('toggleDebugBtn').addEventListener('click', function() {
+        var p = document.getElementById('debugPanel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+      });
 
-        if (status === 'completed') {
-          statusText  = 'Completed';
-          statusClass = 'completed';
-        } else if (status === 'in-progress') {
-          statusText  = 'In Progress';
-          statusClass = 'in-progress';
+      // Sample lessons (fallback when Firestore lessons collection is empty)
+      var sampleLessons = [
+        {id:'lesson-1',title:'Hello World in Python',topic:'Introduction',difficulty:'beginner',orderIndex:1,isPublished:true},
+        {id:'lesson-2',title:'Variables and Data Types',topic:'Basics',difficulty:'beginner',orderIndex:2,isPublished:true},
+        {id:'lesson-3',title:'Conditional Statements',topic:'Control Flow',difficulty:'beginner',orderIndex:3,isPublished:true},
+        {id:'lesson-4',title:'Loops - For and While',topic:'Control Flow',difficulty:'intermediate',orderIndex:4,isPublished:true},
+        {id:'lesson-5',title:'Functions in Python',topic:'Functions',difficulty:'intermediate',orderIndex:5,isPublished:true},
+        {id:'lesson-6',title:'Lists and Tuples',topic:'Data Structures',difficulty:'intermediate',orderIndex:6,isPublished:true},
+        {id:'lesson-7',title:'Dictionaries (Key-Value)',topic:'Data Structures',difficulty:'intermediate',orderIndex:7,isPublished:true},
+        {id:'lesson-8',title:'List Comprehensions',topic:'Advanced Basics',difficulty:'intermediate',orderIndex:8,isPublished:true},
+        {id:'lesson-9',title:'Error Handling (Try/Except)',topic:'Error Handling',difficulty:'intermediate',orderIndex:9,isPublished:true},
+        {id:'lesson-10',title:'File I/O Basics',topic:'File Handling',difficulty:'advanced',orderIndex:10,isPublished:true}
+      ];
+
+      var userProgress = {};
+
+      /**
+       * Load lessons from Firestore or fall back to sampleLessons.
+       */
+      async function loadLessons() {
+        D('loadLessons() — calling apiRequest(/api/lessons)');
+        try {
+          var data = await apiRequest('/api/lessons');
+          var list = data.lessons.length ? data.lessons : sampleLessons;
+          D('loadLessons() — ' + list.length + ' lessons returned');
+          return list;
+        } catch(err) {
+          D('loadLessons() FAILED: ' + err.message + ' — using sampleLessons', 'warn');
+          return sampleLessons;
+        }
+      }
+
+      /**
+       * Load user progress from Firestore.
+       * Returns an ARRAY of {lessonId, userId, status, ...} objects.
+       * The caller (onAuthChange / refreshProgressOnShow) stores
+       * the result into userProgress as an array.
+       */
+      async function loadProgress() {
+        var user = getCurrentUser();
+        if (!user) { D('loadProgress — getCurrentUser() returned null', 'warn'); return []; }
+        D('loadProgress | uid: ' + user.uid, 'info');
+        try {
+          var data  = await apiRequest('/api/progress');
+          var items = data && data.progress && data.progress.length ? data.progress
+                    : (data && data.length ? data : []);
+          D('loadProgress — ' + items.length + ' items returned from getProgress()', 'ok');
+          items.forEach(function(p) {
+            D('  lesson=' + p.lessonId + ' status=' + p.status + ' userId=' + p.userId, 'ok');
+          });
+          return items;
+        } catch(err) {
+          D('loadProgress FAILED: ' + (err.code||'') + ' ' + (err.message||err), 'err');
+          console.error('[Dash] loadProgress error:', err);
+          return [];
+        }
+      }
+
+      /**
+       * Update progress bar width + percentage label.
+       */
+      function updateProgressBar(done, total) {
+        var pct = total > 0 ? Math.round(done / total * 100) : 0;
+        var fill = document.getElementById('progressFill');
+        var lbl  = document.getElementById('progressPercent');
+        if (fill) fill.style.width = pct + '%';
+        if (lbl)  lbl.textContent  = pct + '%';
+        D('progressBar: ' + done + '/' + total + ' = ' + pct + '%');
+      }
+
+      /**
+       * Build lesson-card HTML and update the progress bar.
+       */
+      function renderLessons(lessons) {
+        var container = document.getElementById('lessonsContainer');
+        var done      = Object.values(userProgress).filter(function(s) { return s === 'completed'; }).length;
+        var total     = lessons.length;
+
+        updateProgressBar(done, total);
+        D('renderLessons — ' + total + ' cards | completed=' + done);
+
+        if (lessons.length === 0) {
+          container.innerHTML = '<div class="text-center" style="padding:60px 24px;"><p class="text-secondary">No lessons yet.</p></div>';
+          return;
         }
 
-        const badgeClass = lesson.difficulty === 'beginner'    ? 'badge-beginner'
-                         : lesson.difficulty === 'intermediate'? 'badge-intermediate'
-                         : 'badge-advanced';
+        container.innerHTML = '<div class="lessons-grid">' + lessons.map(function(l) {
+          var lid = String(l.id);
+          var s   = userProgress[lid] || '';
+          var st  = '', sc = '';
+          if (s === 'completed')       { st = 'Completed';  sc = 'completed'; }
+          else if (s === 'in-progress'){ st = 'In Progress'; sc = 'in-progress'; }
+          var b = l.difficulty === 'beginner' ? 'badge-beginner'
+                : l.difficulty === 'intermediate' ? 'badge-intermediate'
+                : 'badge-advanced';
+      return '<a href="lesson.html?id=' + l.id + '" style="text-decoration:none">'
+           + '<div class="card lesson-card card-clickable">'
+           + '  <span class="lesson-card-badge ' + b + '">' + l.difficulty + '</span>'
+           + '  <h3>' + l.title + '</h3><p>' + l.topic + '</p>'
+           + (st ? '<span class="lesson-card-status ' + sc + '">' + st + '</span>'
+                 : '<span class="lesson-card-status" style="color:var(--color-text-secondary)">Not started</span>')
+           + '</div></a>';
+      }).join('') + '</div>';
+      }
 
-        return `
-          <a href="lesson.html?id=${lesson.id}" style="text-decoration: none;">
-            <div class="card lesson-card card-clickable">
-              <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
-              <h3>${lesson.title}</h3>
-              <p>${lesson.topic}</p>
-              ${statusText ? `<span class="lesson-card-status ${statusClass}">${statusText}</span>` : `<span class="lesson-card-status" style="color: var(--color-text-secondary);">Not started</span>`}
-            </div>
-          </a>`;
-      }).join('');
-
-      container.innerHTML = `<div class="lessons-grid">${cardsHTML}</div>`;
-    }
-
-    // Initialize dashboard
-    onAuthChange(async (user) => {
-      try {
-        if (user) {
-          document.getElementById('welcomeText').textContent = 'My Lessons';
-
-          getUserProfile(user.uid).then(profile => {
-            if (profile) {
-              document.getElementById('profileName').textContent = profile.name || 'User';
-              document.getElementById('profileEmail').textContent = user.email;
-              document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
-            } else {
-              document.getElementById('profileName').textContent = 'Learner';
-              document.getElementById('profileEmail').textContent = user.email;
-            }
-          }).catch(apiErr => console.error('Profile load error:', apiErr));
-
-          userProgress = await loadProgress(user);
-        } else {
-          window.location.href = 'login.html';
+      // ── Init on page load (handles already-authed sessions) ──────────────────────
+      async function initDashboard() {
+        try {
+          var user = getCurrentUser();
+          if (!user) {
+            D('initDashboard — no user, waiting for auth...', 'warn');
+            onAuthChange(async function(u) {
+              if (u) runAuthFlow(u);
+            });
+            return;
+          }
+          runAuthFlow(user);
+        } catch(err) {
+          D('initDashboard FATAL: ' + err.message, 'err');
+          console.error(err);
+          alert('Dashboard Error: ' + err.message);
         }
+      }
 
-        const lessons = await loadLessons();
+      async function runAuthFlow(user) {
+        D('runAuthFlow — uid: ' + user.uid, 'ok');
+        document.getElementById('welcomeText').textContent = 'My Lessons';
+
+        getUserProfile(user.uid).then(function(profile) {
+          if (profile) {
+            D('profile loaded — name=' + (profile.name || 'User'), 'ok');
+            document.getElementById('profileName').textContent  = profile.name  || 'User';
+            document.getElementById('profileEmail').textContent = user.email;
+            document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
+          } else {
+            D('profile null — showing Learner', 'warn');
+            document.getElementById('profileName').textContent  = 'Learner';
+            document.getElementById('profileEmail').textContent = user.email;
+          }
+        }).catch(function(e) {
+          D('getUserProfile FAILED: ' + e.message, 'warn');
+          document.getElementById('profileName').textContent  = 'Learner';
+          document.getElementById('profileEmail').textContent = user.email;
+        });
+
+        const lessonsAndProgress = await Promise.all([loadLessons(), loadProgress()]);
+        userProgress = lessonsAndProgress[1];
+        renderLessons(lessonsAndProgress[0]);
+      }
+
+      initDashboard();
+
+      // ── Refresh on page visibility / back-button / lesson-complete event ─────────
+      async function refreshProgressOnShow() {
+        var user = getCurrentUser();
+        if (!user) return;
+        D('refreshProgressOnShow — pageshow / back-button / progress-updated event');
+        userProgress = await loadProgress();
+        var lessons  = await loadLessons();
         renderLessons(lessons);
-      } catch (fatalError) {
-        console.error('Core Dashboard Error:', fatalError);
-        alert('Dashboard Init Error: ' + fatalError.message);
       }
-    });
 
-    /**
-     * Re-load progress whenever the page becomes visible again.
-     * Fires on direct navigation, back/forward, and when the browser restores
-     * the page from the bfcache (back-button cache).
-     */
-    async function refreshProgressOnShow() {
-      const user = getCurrentUser();
-      if (!user) return;
-      userProgress = await loadProgress(user);
-      const lessons = await loadLessons();
-      renderLessons(lessons);
-    }
-
-    // pageshow – fires on every navigation to this page, including back/forward
-    window.addEventListener('pageshow', refreshProgressOnShow);
-
-    // custom event — emitted by lesson.html after a successful mark-complete
-    window.addEventListener('progress-updated', refreshProgressOnShow);
-
-    // storage – fires when localStorage is updated by a different tab/window
-    window.addEventListener('storage', (e) => {
-      if (e.key && e.key.startsWith('progress_')) {
-        refreshProgressOnShow();
-      }
-    });
-  </script>
+      window.addEventListener('pageshow',            refreshProgressOnShow);
+      window.addEventListener('progress-updated',    refreshProgressOnShow);
+      window.addEventListener('storage', function(e) {
+        if (e.key && e.key.indexOf('progress_') === 0) refreshProgressOnShow();
+      });
+    </script>
+  </body>
+</html>
 </body>
 </html>

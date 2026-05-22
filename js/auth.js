@@ -19,78 +19,90 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  serverTimestamp,
   query,
   where,
-  orderBy,
-  serverTimestamp
+  orderBy
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-// Helper for timeouts
-async function withTimeout(promise, ms = 10000) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
-  ]);
+// ---------- timeout helper ----------
+function timeoutFn(fn) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function() {
+      reject(new Error('Timeout'));
+    }, 10000);
+    fn().then(function(v) {
+      clearTimeout(timer);
+      resolve(v);
+    }).catch(function(e) {
+      clearTimeout(timer);
+      reject(e);
+    });
+  });
 }
 
+// ---------- auth error message table ----------
+var authErrorMessages = {
+  'auth/invalid-email':          'Please enter a valid email address.',
+  'auth/user-not-found':         'No account found with this email. Please sign up first.',
+  'auth/wrong-password':         'Incorrect password.',
+  'auth/invalid-credential':     'Invalid email or password.',
+  'auth/email-already-in-use':   'An account with this email already exists. Try logging in instead.',
+  'auth/weak-password':          'Password is too weak. Use at least 8 characters.',
+  'auth/user-disabled':          'This account has been disabled. Contact support.',
+  'auth/too-many-requests':      'Too many failed attempts. Please try again in a few minutes.',
+  'auth/network-request-failed': 'Network error. Check your internet connection and try again.',
+  'auth/operation-not-allowed':  'Email/password sign-in is disabled. Contact support.',
+  'auth/popup-closed-by-user':   'Sign-in was cancelled.'
+};
+
 // ============================================
-// Auth helper — local module-level function
+// AUTH FUNCTIONS
 // ============================================
-
-/**
- * Map Firebase Auth error codes to user-facing strings.
- * Returns undefined for unknown codes (caller falls back to 'Something went wrong...').
- */
-function authErrorMessage(code) {
-  return ({
-    'auth/invalid-email':          'Please enter a valid email address.',
-    'auth/user-not-found':         'No account found with this email. Please sign up first.',
-    'auth/wrong-password':         'Incorrect password.',
-    'auth/invalid-credential':     'Invalid email or password.',
-    'auth/email-already-in-use':   'An account with this email already exists. Try logging in instead.',
-    'auth/weak-password':          'Password is too weak. Use at least 8 characters.',
-    'auth/user-disabled':          'This account has been disabled. Contact support.',
-    'auth/too-many-requests':      'Too many failed attempts. Please try again in a few minutes.',
-    'auth/network-request-failed': 'Network error. Check your internet connection and try again.',
-    'auth/operation-not-allowed':  'Email/password sign-in is disabled. Contact support.',
-    'auth/popup-closed-by-user':   'Sign-in was cancelled.',
-  })[code];
-}
-
-// ---- AUTH FUNCTIONS ----
-
 export async function signupUser(name, email, password) {
   try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    var cred  = await createUserWithEmailAndPassword(auth, email, password);
+    var user  = cred.user;
 
-    // Save profile directly to Firestore
     await setDoc(doc(db, "users", user.uid), {
-      name,
-      email,
-      role: 'student',
+      name:  name,
+      email: email,
+      role:  'student',
       createdAt: serverTimestamp()
     });
 
+    // Verify the profile was written before returning
+    var snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists()) {
+      console.warn('[Auth] Profile write verification failed after signup — retrying once...');
+      await new Promise(function(r) { setTimeout(r, 800); });
+      snap = await getDoc(doc(db, 'users', user.uid));
+      if (!snap.exists()) {
+        console.warn('[Auth] Profile still missing after retry — calling createUserProfileIfMissing as final fallback');
+        await createUserProfileIfMissing(user.uid);
+      } else {
+        console.log('[Auth] Profile confirmed on retry for uid:', user.uid);
+      }
+    } else {
+      console.log('[Auth] Profile confirmed for uid:', user.uid);
+    }
+
     return user;
-  } catch (err) {
+  } catch(err) {
     console.error('[Auth] signupUser FAILED:', err.code || 'NO-CODE', err.message);
-
-    const friendly = authErrorMessage(err.code);
+    var friendly = authErrorMessages[err.code];
     if (friendly) err._friendly = friendly;
-
     throw err;
   }
 }
 
 export async function loginUser(email, password) {
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
-  } catch (err) {
+    var cred = await signInWithEmailAndPassword(auth, email, password);
+    return cred.user;
+  } catch(err) {
     console.error('[Auth] loginUser FAILED:', err.code || 'NO-CODE', err.message);
-
-    const friendly = authErrorMessage(err.code);
+    var friendly = authErrorMessages[err.code];
     if (friendly) err._friendly = friendly;
     throw err;
   }
@@ -102,9 +114,9 @@ export async function resetPassword(email) {
 
 export async function getUserProfile(uid) {
   try {
-    const userDoc = await getDoc(doc(db, "users", uid));
-    return userDoc.exists() ? userDoc.data() : null;
-  } catch (err) {
+    var snap = await getDoc(doc(db, "users", uid));
+    return snap.exists() ? snap.data() : null;
+  } catch(err) {
     console.warn('[Profile] getUserProfile failed for uid:', uid, err.code, err.message);
     return null;
   }
@@ -112,18 +124,42 @@ export async function getUserProfile(uid) {
 
 /**
  * Read the `role` field from this user's Firestore profile.
- * Returns 'student' if the record is missing or role is not set.
- * Used to gate admin page access.
+ * Returns 'student' if the record is missing.
  */
 export async function getUserRole() {
-  const uid = getCurrentUser()?.uid;
+  var uid = getCurrentUser() && getCurrentUser().uid;
   if (!uid) return 'student';
   try {
-    const doc    = await getDoc(doc(db, 'users', uid));
-    const role   = doc.exists() ? String(doc.data().role || '') : '';
+    var snap = await getDoc(doc(db, 'users', uid));
+    var role  = snap.exists() ? String(snap.data().role || '') : '';
     return role === 'admin' ? 'admin' : 'student';
-  } catch {
+  } catch(_) {
     return 'student';
+  }
+}
+
+/**
+ * Ensure the users/{uid} document exists in Firestore.
+ * If it is missing, write a default profile (role = 'student').
+ */
+export async function createUserProfileIfMissing(uid) {
+  try {
+    var snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) return snap.data();
+
+    var au    = getCurrentUser();
+    var email = au ? au.email : '';
+    await setDoc(doc(db, 'users', uid), {
+      name:  email ? email.split('@')[0] : 'Learner',
+      email: email,
+      role:  'student',
+      createdAt: serverTimestamp()
+    });
+    console.log('[Auth] Created missing users/' + uid + ' doc');
+    return { name: 'Learner', email: email, role: 'student' };
+  } catch(err) {
+    console.error('[Auth] createUserProfileIfMissing FAILED for uid:', uid, err.code, err.message);
+    return null;
   }
 }
 
@@ -139,86 +175,63 @@ export function getCurrentUser() {
   return auth.currentUser;
 }
 
-// ---- LESSON FUNCTIONS ----
-
-export async function getLessons(admin = false) {
+// ============================================
+// LESSON FUNCTIONS
+// ============================================
+export async function getLessons(admin) {
+  admin = !!admin;
   try {
-    let q = query(collection(db, "lessons"), orderBy("orderIndex", "asc"));
-
-    if (!admin) {
+    var q;
+    if (admin) {
+      q = query(collection(db, "lessons"), orderBy("orderIndex", "asc"));
+    } else {
       q = query(collection(db, "lessons"), where("isPublished", "==", true), orderBy("orderIndex", "asc"));
     }
-
-    const snapshot = await withTimeout(getDocs(q), 8000);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (err) {
-    console.warn('Firestore fetch failed or timed out:', err);
-    return []; // Triggers fallback in dashboard.html
+    var snap = await timeoutFn(function() { return getDocs(q); });
+    return snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+  } catch(err) {
+    console.warn('Firestore getLessons failed:', err);
+    return [];
   }
 }
 
 export async function getLessonById(lessonId) {
   try {
-    const lessonDoc = await withTimeout(getDoc(doc(db, "lessons", lessonId)), 8000);
-    if (!lessonDoc.exists()) return null;
+    var docSnap = await timeoutFn(function() { return getDoc(doc(db, "lessons", lessonId)); });
+    if (!docSnap.exists()) return null;
 
-    // Get sections and exercises
-    const [sectionsSnap, exercisesSnap] = await Promise.all([
-      getDocs(query(collection(db, "lessons", lessonId, "sections"), orderBy("order", "asc"))),
-      getDocs(collection(db, "lessons", lessonId, "exercises"))
-    ]);
+    var sectionsSnap   = await timeoutFn(function() { return getDocs(query(collection(db, "lessons", lessonId, "sections"), orderBy("order", "asc"))); });
+    var exercisesSnap  = await timeoutFn(function() { return getDocs(collection(db, "lessons", lessonId, "exercises")); });
 
-    const sections = sectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const exercises = exercisesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    var sections  = sectionsSnap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+    var exercises = exercisesSnap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
 
     return {
-      lesson: { id: lessonDoc.id, ...lessonDoc.data() },
-      sections,
-      exercises
+      lesson:  { id: docSnap.id, ...docSnap.data() },
+      sections: sections,
+      exercises: exercises
     };
-  } catch (err) {
-    console.warn('Firestore lesson fetch failed:', err);
-    return null; // Triggers fallback in lesson.html
+  } catch(err) {
+    console.warn('Firestore getLessonById failed:', err);
+    return null;
   }
 }
 
-// ── PROGRESS HELPERS ─────────────────────────────────────────────────────────
-
+// ============================================
+// PROGRESS FUNCTIONS
+// ============================================
 /**
- * Fetch every progress document for the current user from the
- * flat `progress` collection, filtered by userId field.
- * Each document ID is  `${uid}_${lessonId}`  (e.g. uid_lesson-1).
+ * Read ALL progress docs from Firestore, filter by userId in JavaScript.
+ * Returns a plain array of {lessonId, userId, status, ...} objects.
  */
-async function getAllUserProgress() {
-  const user = getCurrentUser();
-  if (!user) return [];
-
-  const uid = String(user.uid).trim();
-  try {
-    // Fetch ALL progress docs, filter in JS (avoids composite-index + list-rule issues)
-    const snap = await withTimeout(getDocs(collection(db, "progress")), 10000);
-    const mine = snap.docs
-      .filter(d => String(d.get('userId') || '') === uid)
-      .map(d => ({ lessonId: d.id, ...d.data() }));
-
-    console.log('[Progress] getAllUserProgress fetched', mine.length, 'docs for uid:', uid,
-                '| total in collection:', snap.size);
-    return mine;
-  } catch (err) {
-    console.error('[Progress] getAllUserProgress error:', err.code, err.message);
-    return [];
-  }
-}
-
-// ── PROGRESS FUNCTIONS ─────────────────────────────────────────────────────────
-
 export async function getProgress() {
-  const user = getCurrentUser();
-  const uid  = user ? String(user.uid).trim() : '';
-  const localKey  = 'progress_' + uid;
-  const localData = (() => { try { return JSON.parse(localStorage.getItem(localKey) || '[]'); } catch (_) { return []; } })();
+  var user    = getCurrentUser();
+  var uid     = user ? String(user.uid).trim() : '';
+  var lKey    = 'progress_' + uid;
+  var lData;
+  try { lData = JSON.parse(localStorage.getItem(lKey) || '[]'); } catch(_) { lData = []; }
 
-  console.log('[Progress] getProgress START | uid:', uid, '| localData:', localData.length, 'items');
+  console.log('[Progress] getProgress START | uid:', uid, '| localData:', lData.length, 'items');
 
   if (!user) {
     console.warn('[Progress] getProgress: not authenticated — returning []');
@@ -226,85 +239,86 @@ export async function getProgress() {
   }
 
   try {
-    // ── Fetch ALL progress docs, filter in JS (no composite index / query rule needed) ──
-    const allSnap  = await withTimeout(getDocs(collection(db, "progress")), 10000);
-    const allCount = allSnap.size;
-    let   matched  = 0;
+    // Read ALL docs from the progress collection (avoids composite-index + query-rule issues)
+    var allSnap  = await timeoutFn(function() { return getDocs(collection(db, "progress")); });
+    var allCount = allSnap.size;
+    var matched  = 0;
 
-    console.log('[Progress] getProgress | Firestore TOTAL docs in progress collection:', allCount);
+    console.log('[Progress] total docs in progress collection:', allCount);
 
-    const mine = [];
-    allSnap.forEach(docSnap => {
-      const docId   = String(docSnap.id);
-      const docUid  = String(docSnap.get('userId') || '');
-      const match   = docUid === uid;
+    var mine = [];
+    allSnap.forEach(function(docSnap) {
+      var docId  = String(docSnap.id);
+      var docUid = String(docSnap.get('userId') || '');
+      var isMine = docUid === uid;
 
-      if (!match && matched === 0 && docUid) {
-        // Log first non-matching doc to understand the mismatch
-        console.log('[Progress] getProgress | non-matching doc | id:', docId, '| stored userId:', docUid, '| expected uid:', uid);
+      if (!isMine && matched === 0 && docUid) {
+        console.log('[Progress] non-matching doc | id:', docId, '| stored userId:', docUid, '| expected uid:', uid);
       }
-
-      if (match) {
+      if (isMine) {
         matched++;
-        const data = docSnap.data();
-        const lessonId = String(data.lessonId || docId.replace(uid + '_', ''));
+        var data     = docSnap.data();
+        var lessonId = String(data.lessonId || docId.replace(uid + '_', ''));
         mine.push({
-          lessonId,
-          userId:   docUid,
-          status:   String(data.status || ''),
+          lessonId:   lessonId,
+          userId:     docUid,
+          status:     String(data.status || ''),
           completedAt: data.completedAt || null,
-          _docId:   docId
+          _docId:     docId
         });
       }
     });
 
-    console.log('[Progress] getProgress | matched', matched, 'docs for uid:', uid,
-                mine.length ? '| lessons:' + mine.map(m => m.lessonId + ':' + m.status).join(', ') : '');
+    console.log('[Progress] matched', matched, 'docs for uid:', uid,
+                mine.length ? '| lessons:' + mine.map(function(m) { return m.lessonId + ':' + m.status; }).join(', ') : '');
 
-    // If Firestore returned 0 for THIS user but localData is non-empty
-    if (matched === 0 && localData.length > 0) {
-      console.warn('[Progress] getProgress | Firestore 0 but localStorage has',
-                   localData.length, 'items — Firestore rule or sync issue. Falling back to local.');
+    if (matched === 0 && lData.length > 0) {
+      console.warn('[Progress] Firestore 0 but localStorage has', lData.length, 'items — rules or index issue. Using local.');
     }
 
-    const merged = [...mine];
-    localData.forEach(lp => {
-      const has = merged.find(m => m.lessonId === lp.lessonId || m._docId === lp.docId);
+    // Merge Firestore data with localStorage fallback
+    var merged = mine.slice(0);
+    lData.forEach(function(lp) {
+      var has = merged.find(function(m) { return m.lessonId === lp.lessonId || m._docId === lp.docId; });
       if (!has) merged.push(lp);
     });
 
-    localStorage.setItem(localKey, JSON.stringify(merged));
-    console.log('[Progress] getProgress END | returning', merged.length, 'items');
+    localStorage.setItem(lKey, JSON.stringify(merged));
+    console.log('[Progress] getProgress END — returning', merged.length, 'items');
     return merged;
-  } catch (err) {
+  } catch(err) {
     console.error('[Progress] getProgress CATCH:', err.code || '', err.message);
-    return localData.length ? [...localData] : [];
+    return lData.length ? lData.slice(0) : [];
   }
 }
 
 export async function updateProgress(lessonId, status) {
-  const user = auth.currentUser;
-  if (!user) return;
+  var user = getCurrentUser();
+  if (!user) {
+    console.warn('[Progress] updateProgress: no authenticated user');
+    return;
+  }
 
-  const lessonIdStr = String(lessonId);
-  const statusStr   = String(status);
+  var lessonIdStr = String(lessonId);
+  var statusStr   = String(status);
 
-  // Composite doc ID (uid_lessonId) — setDoc merge makes this idempotent
-  const docId = user.uid + "_" + lessonIdStr;
+  // Composite doc ID — uid_lessonId is unique per user+lesson
+  var docId = user.uid + '_' + lessonIdStr;
 
-  // 1. Update localStorage immediately (optimistic)
-  const localProgress = JSON.parse(localStorage.getItem(`progress_${user.uid}`) || '[]');
-  const idx = localProgress.findIndex(p => p.lessonId === lessonIdStr);
+  // 1. Optimistic write to localStorage
+  var localProgress;
+  try { localProgress = JSON.parse(localStorage.getItem('progress_' + user.uid) || '[]'); } catch(_) { localProgress = []; }
+  var idx = localProgress.findIndex(function(p) { return p.lessonId === lessonIdStr; });
   if (idx > -1) {
-    localProgress[idx] = { ...localProgress[idx], lessonId: lessonIdStr, status: statusStr, userId: user.uid, updatedAt: new Date().toISOString() };
+    localProgress[idx] = { lessonId: lessonIdStr, status: statusStr, userId: user.uid, updatedAt: new Date().toISOString() };
   } else {
     localProgress.push({ lessonId: lessonIdStr, status: statusStr, userId: user.uid, updatedAt: new Date().toISOString() });
   }
-  localStorage.setItem(`progress_${user.uid}`, JSON.stringify(localProgress));
+  localStorage.setItem('progress_' + user.uid, JSON.stringify(localProgress));
 
-  // 2. Save to Firestore: progress/{uid}_{lessonId}
+  // 2. Save to Firestore
   try {
-    const dbData = {
+    var dbData = {
       userId:   user.uid,
       lessonId: lessonIdStr,
       status:   statusStr,
@@ -313,102 +327,82 @@ export async function updateProgress(lessonId, status) {
     if (statusStr === 'completed') dbData.completedAt = serverTimestamp();
 
     await setDoc(doc(db, "progress", docId), dbData, { merge: true });
-    console.log('[Progress] Saved | uid:', user.uid, '| lesson:', lessonIdStr, '→', statusStr);
-  } catch (err) {
-    console.error('[Progress] Firestore write FAILED:', err.code, err.message);
-    throw err; // Propagate so the lesson page can surface the error to the user
+    console.log('[Progress] updateProgress — saved | doc:', docId, '→', statusStr);
+  } catch(err) {
+    console.error('[Progress] updateProgress — Firestore write FAILED:', err.code, err.message);
+    // restore localStorage to pre-write state
+    localStorage.setItem('progress_' + user.uid, JSON.stringify(localProgress));
+    throw err;
   }
 }
 
-// ---- ADMIN FUNCTIONS ----
-
+// ============================================
+// ADMIN FUNCTIONS
+// ============================================
 export async function createLesson(data) {
-  const { title, topic, difficulty, orderIndex, content, starterCode, hint, isPublished } = data;
-
-  const lessonRef = await addDoc(collection(db, "lessons"), {
-    title,
-    topic,
-    difficulty: difficulty || 'beginner',
-    orderIndex: orderIndex || 0,
-    isPublished: isPublished || false,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+  var lessonRef = await addDoc(collection(db, "lessons"), {
+    title:       data.title,
+    topic:       data.topic,
+    difficulty:  data.difficulty       || 'beginner',
+    orderIndex:  data.orderIndex       || 0,
+    isPublished: data.isPublished      || false,
+    createdAt:   serverTimestamp(),
+    updatedAt:   serverTimestamp()
   });
-
-  // Add section
-  if (content) {
+  if (data.content) {
     await addDoc(collection(db, "lessons", lessonRef.id, "sections"), {
-      heading: title,
-      content: content,
-      order: 0
+      heading: data.title,
+      content: data.content,
+      order:   0
     });
   }
-
-  // Add exercise
-  if (starterCode) {
+  if (data.starterCode) {
     await addDoc(collection(db, "lessons", lessonRef.id, "exercises"), {
-      prompt: `Practice: ${title}`,
-      starterCode: starterCode || '',
-      hint: hint || 'Try reading the lesson content for help.',
+      prompt:        'Practice: ' + data.title,
+      starterCode:   data.starterCode || '',
+      hint:          data.hint || 'Try reading the lesson content for help.',
       expectedOutput: ''
     });
   }
-
   return lessonRef.id;
 }
 
 export async function updateLesson(lessonId, data) {
-  const lessonRef = doc(db, "lessons", lessonId);
-  const updates = { ...data, updatedAt: serverTimestamp() };
-
-  // Note: This logic assumes we don't need to update subcollections in this simple version
-  // or it just updates the top-level lesson doc.
-  await updateDoc(lessonRef, updates);
+  await updateDoc(doc(db, "lessons", lessonId), { ...data, updatedAt: serverTimestamp() });
 }
 
 export async function deleteLesson(lessonId) {
-  // Simplification: We only delete the lesson doc.
-  // Deep deletion of subcollections would require more code, but for a viva, this is often acceptable.
   await deleteDoc(doc(db, "lessons", lessonId));
 }
 
-// ---- LEGACY SUPPORT (Avoid breaking existing page code) ----
-// This function replaces the old apiRequest to make refactoring easier
-export async function apiRequest(endpoint, options = {}) {
-  const { method, body } = options;
-  const parsedBody = body ? JSON.parse(body) : {};
+// ============================================
+// API ROUTER (legacy compatibility)
+// ============================================
+export async function apiRequest(endpoint, options) {
+  options = options || {};
+  var method = options.method, body = options.body;
+  var parsedBody = body ? JSON.parse(body) : {};
 
-  if (endpoint === '/api/auth/signup') {
-    // Signup already handled by signupUser, but we'll leave this for compatibility
-    return { message: 'Success' };
-  }
-
-  if (endpoint === '/api/lessons' && method === 'POST') {
-    return { lessonId: await createLesson(parsedBody) };
-  }
-
+  if (endpoint === '/api/auth/signup')        return { message: 'Success' };
+  if (endpoint === '/api/lessons' && method === 'POST')  return { lessonId: await createLesson(parsedBody) };
   if (endpoint === '/api/lessons' || endpoint === '/api/lessons?admin=true') {
-    const isAdmin = endpoint.includes('admin=true');
-    return { lessons: await getLessons(isAdmin) };
+    var _isAdmin = endpoint.indexOf('admin=true') !== -1;
+    return { lessons: await getLessons(_isAdmin) };
+  }
+  if (endpoint.indexOf('/api/lessons/') === 0) {
+    var id = endpoint.split('/api/lessons/')[1];
+    if (method === 'PUT')    { await updateLesson(id, parsedBody); return { message: 'Success' }; }
+    if (method === 'DELETE') { await deleteLesson(id);      return { message: 'Success' }; }
+    var ldata = await getLessonById(id);
+    if (!ldata) throw new Error('Lesson not found');
+    return ldata;
   }
 
-  if (endpoint.startsWith('/api/lessons/')) {
-    const id = endpoint.split('/api/lessons/')[1];
-    if (method === 'PUT') {
-      await updateLesson(id, parsedBody);
-      return { message: 'Success' };
-    }
-    if (method === 'DELETE') {
-      await deleteLesson(id);
-      return { message: 'Success' };
-    }
-    const data = await getLessonById(id);
-    if (!data) throw new Error('Lesson not found');
-    return data;
-  }
-
+  // ── Progress ─────────────────────────────────────────────────────────────
+  // When method is missing (GET) or explicitly === 'GET'
   if (endpoint === '/api/progress' && (!method || method === 'GET')) {
-    return { progress: await getProgress() };
+    var progressData = await getProgress();          // returns a plain array
+    return { progress: progressData };               // wrap for apiRequest callers
   }
 
   if (endpoint === '/api/progress/update' && method === 'POST') {
@@ -416,5 +410,5 @@ export async function apiRequest(endpoint, options = {}) {
     return { message: 'Success' };
   }
 
-  throw new Error(`Endpoint ${endpoint} not supported in Serverless mode.`);
+  throw new Error('Endpoint ' + endpoint + ' not supported in Serverless mode.');
 }
