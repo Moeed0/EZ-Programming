@@ -50,8 +50,8 @@
   <div id="footer"></div>
 
   <script type="module">
-    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.4';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.4';
+    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.5';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.5';
 
     renderNavbar('dashboard');
     renderFooter();
@@ -236,38 +236,39 @@
 
     // Initialize dashboard
     onAuthChange(async (user) => {
-      if (user) {
-        document.getElementById('welcomeText').textContent = 'My Lessons';
+      try {
+        if (user) {
+          document.getElementById('welcomeText').textContent = 'My Lessons';
+          
+          // Load User Profile
+          getUserProfile(user.uid).then(profile => {
+            if (profile) {
+              document.getElementById('profileName').textContent = profile.name || 'User';
+              document.getElementById('profileEmail').textContent = user.email;
+              document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
+            } else {
+              document.getElementById('profileName').textContent = 'Learner';
+              document.getElementById('profileEmail').textContent = user.email;
+            }
+          }).catch(apiErr => console.error('Profile load error:', apiErr));
+
+          userProgress = await loadProgress(user);
+        } else {
+          window.location.href = 'login.html';
+        }
+
+        const lessons = await loadLessons();
+        renderLessons(lessons);
         
-        // Load User Profile
-        getUserProfile(user.uid).then(profile => {
-          if (profile) {
-            document.getElementById('profileName').textContent = profile.name || 'User';
-            document.getElementById('profileEmail').textContent = user.email;
-            document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
-          } else {
-            document.getElementById('profileName').textContent = 'Learner';
-            document.getElementById('profileEmail').textContent = user.email;
-          }
-        }).catch(() => {
-          document.getElementById('profileName').textContent = 'Learner';
-          document.getElementById('profileEmail').textContent = user.email;
-        });
-
-        userProgress = await loadProgress(user);
-      } else {
-        window.location.href = 'login.html';
-      }
-
-      const lessons = await loadLessons();
-      renderLessons(lessons);
-      
-      // Temporary Diagnostic for the user
-      const completedCount = Object.values(userProgress).filter(s => s === 'completed').length;
-      if (Object.keys(userProgress).length > 0) {
-        showToast(`Cloud Sync: ${Object.keys(userProgress).length} items found.`, 'success');
-      } else {
-        showToast("Cloud Sync: No progress found yet. Try completing a lesson!", "info");
+        // Diagnostic toast
+        if (Object.keys(userProgress).length > 0) {
+          showToast(`Cloud Sync: ${Object.keys(userProgress).length} items found.`, 'success');
+        } else {
+          showToast("Cloud Sync: No progress found yet.", "info");
+        }
+      } catch (fatalError) {
+        console.error('Core Dashboard Error:', fatalError);
+        alert('Dashboard Init Error: ' + fatalError.message);
       }
     });
   </script>
