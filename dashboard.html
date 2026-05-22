@@ -18,11 +18,13 @@
   <div class="dashboard-container">
     <!-- Header -->
     <div class="dashboard-header">
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 32px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <div>
           <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h1>
-          <p class="text-secondary">Browse available lessons and track your learning progress.</p>
+          <p class="text-secondary">Browse available lessons and track your learning. Click a lesson to begin!</p>
         </div>
+        <button class="btn btn-outline btn-sm" id="forceSyncBtn">Force Sync Progress</button>
+      </div>
         
         <!-- User Profile Card (Top Right) -->
         <div class="card" style="padding: 12px 20px; min-width: 260px; display: flex; align-items: center; gap: 16px; background-color: white; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
@@ -50,8 +52,8 @@
   <div id="footer"></div>
 
   <script type="module">
-    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.6';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.6';
+    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.7';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.7';
 
     renderNavbar('dashboard');
     renderFooter();
@@ -267,6 +269,42 @@
       } catch (fatalError) {
         console.error('Core Dashboard Error:', fatalError);
         alert('Dashboard Init Error: ' + fatalError.message);
+      }
+    });
+
+    document.getElementById('forceSyncBtn').addEventListener('click', async () => {
+      const user = getCurrentUser();
+      if (!user) {
+        alert("You are not logged in!");
+        return;
+      }
+      showToast("Manual Syncing...", "info");
+      userProgress = await loadProgress(user);
+      const lessons = await loadLessons();
+      renderLessons(lessons);
+      alert(`Sync Complete!\nUser ID: ${user.uid}\nItems Found: ${Object.keys(userProgress).length}`);
+    });
+
+    /**
+     * Re-load progress whenever the page becomes visible again.
+     * This fires on direct navigation, the browser back/forward button,
+     * or when a freshly saved lesson page re-activates this tab.
+     */
+    async function refreshProgressOnShow() {
+      const user = getCurrentUser();
+      if (!user) return;
+      userProgress = await loadProgress(user);
+      const lessons = await loadLessons();
+      renderLessons(lessons);
+    }
+
+    // pageshow – fires on every navigation to this page, including back/forward
+    window.addEventListener('pageshow', refreshProgressOnShow);
+
+    // storage – fires when localStorage is updated by a different tab/window (or same-origin navigation)
+    window.addEventListener('storage', (e) => {
+      if (e.key && e.key.startsWith('progress_')) {
+        refreshProgressOnShow();
       }
     });
   </script>
