@@ -74,12 +74,28 @@ export async function signupUser(name, email, password) {
 
     return user;
   } catch (err) {
-    console.error('[Auth] signupUser FAILED:', err.code || 'NO-CODE', err.message);
+    // If setDoc failed but Auth created the user, re-create via recovery path
+    const authErr = err;
+    try {
+      const existingAuthUser = getCurrentUser();
+      if (existingAuthUser && !authErr.code?.startsWith('auth/')) {
+        console.warn('[Auth] signupUser Auth step failed, trying profile recovery for uid:', existingAuthUser.uid);
+        await setDoc(doc(db, 'users', existingAuthUser.uid), {
+          name:  name,
+          email: email,
+          role:  'student',
+          createdAt: serverTimestamp()
+        }, { merge: true });
+        return existingAuthUser;
+      }
+    } catch (recoverErr) {
+      console.error('[Auth] signupUser profile recovery also failed:', recoverErr.message);
+    }
 
-    const friendly = authErrorMessage(err.code);
-    if (friendly) err._friendly = friendly;
-
-    throw err;
+    console.error('[Auth] signupUser FAILED:', authErr.code || 'NO-CODE', authErr.message);
+    const friendly = authErrorMessage(authErr.code);
+    if (friendly) authErr._friendly = friendly;
+    throw authErr;
   }
 }
 
@@ -124,6 +140,33 @@ export async function getUserRole() {
     return role === 'admin' ? 'admin' : 'student';
   } catch {
     return 'student';
+  }
+}
+
+/**
+ * Ensure the Firestore `users/{uid}` document exists.
+ * Called on every login so a profile is always present even if signup
+ * failed to write it (domain-permission error, network drop, etc.).
+ * Returns the existing profile or a freshly created default one.
+ */
+export async function createUserProfileIfMissing(uid) {
+  try {
+    const existing = await getDoc(doc(db, 'users', uid));
+    if (existing.exists()) return existing.data();
+
+    // No profile doc — create a default one
+    const authUser = getCurrentUser();
+    await setDoc(doc(db, 'users', uid), {
+      name:  authUser?.displayName || authUser?.email?.split('@')[0] || 'Learner',
+      email: authUser?.email  || '',
+      role:  'student',
+      createdAt: serverTimestamp()
+    });
+    console.log('[Auth] Created missing users/' + uid + ' document');
+    return { name: 'Learner', email: authUser?.email || '', role: 'student' };
+  } catch (err) {
+    console.error('[Auth] createUserProfileIfMissing FAILED for uid:', uid, err.code, err.message);
+    return null;
   }
 }
 
@@ -213,9 +256,9 @@ async function getAllUserProgress() {
 // ── PROGRESS FUNCTIONS ─────────────────────────────────────────────────────────
 
 export async function getProgress() {
-  const user = getCurrentUser();
-  const uid  = user ? String(user.uid).trim() : '';
-  const localKey  = 'progress_' + uid;
+  const user    = getCurrentUser();
+  const uid     = user ? String(user.uid).trim() : '';
+  const localKey = 'progress_' + uid;
   const localData = (() => { try { return JSON.parse(localStorage.getItem(localKey) || '[]'); } catch (_) { return []; } })();
 
   console.log('[Progress] getProgress START | uid:', uid, '| localData:', localData.length, 'items');
@@ -226,27 +269,26 @@ export async function getProgress() {
   }
 
   try {
-    // ── Fetch ALL progress docs, filter in JS (no composite index / query rule needed) ──
+    // Fetch ALL progress docs, filter userId in JS (no composite index needed)
     const allSnap  = await withTimeout(getDocs(collection(db, "progress")), 10000);
     const allCount = allSnap.size;
     let   matched  = 0;
 
-    console.log('[Progress] getProgress | Firestore TOTAL docs in progress collection:', allCount);
+    console.log('[Progress] getProgress | total docs in progress collection:', allCount);
 
     const mine = [];
     allSnap.forEach(docSnap => {
-      const docId   = String(docSnap.id);
-      const docUid  = String(docSnap.get('userId') || '');
-      const match   = docUid === uid;
+      const docId  = String(docSnap.id);
+      const docUid = String(docSnap.get('userId') || '');
+      const isMine = docUid === uid;
 
-      if (!match && matched === 0 && docUid) {
-        // Log first non-matching doc to understand the mismatch
+      if (!isMine && matched === 0 && docUid) {
         console.log('[Progress] getProgress | non-matching doc | id:', docId, '| stored userId:', docUid, '| expected uid:', uid);
       }
 
-      if (match) {
+      if (isMine) {
         matched++;
-        const data = docSnap.data();
+        const data     = docSnap.data();
         const lessonId = String(data.lessonId || docId.replace(uid + '_', ''));
         mine.push({
           lessonId,
@@ -261,12 +303,12 @@ export async function getProgress() {
     console.log('[Progress] getProgress | matched', matched, 'docs for uid:', uid,
                 mine.length ? '| lessons:' + mine.map(m => m.lessonId + ':' + m.status).join(', ') : '');
 
-    // If Firestore returned 0 for THIS user but localData is non-empty
     if (matched === 0 && localData.length > 0) {
-      console.warn('[Progress] getProgress | Firestore 0 but localStorage has',
-                   localData.length, 'items — Firestore rule or sync issue. Falling back to local.');
+      console.warn('[Progress] getProgress | Firestore 0 docs but localStorage has',
+                   localData.length, 'items — Firestore rule or index problem. Using local cache.');
     }
 
+    // Merge Firestore data with localStorage fallback
     const merged = [...mine];
     localData.forEach(lp => {
       const has = merged.find(m => m.lessonId === lp.lessonId || m._docId === lp.docId);
@@ -283,16 +325,19 @@ export async function getProgress() {
 }
 
 export async function updateProgress(lessonId, status) {
-  const user = auth.currentUser;
-  if (!user) return;
+  const user = getCurrentUser();
+  if (!user) {
+    console.warn('[Progress] updateProgress: no authenticated user');
+    return;
+  }
 
   const lessonIdStr = String(lessonId);
   const statusStr   = String(status);
 
-  // Composite doc ID (uid_lessonId) — setDoc merge makes this idempotent
-  const docId = user.uid + "_" + lessonIdStr;
+  // Composite doc ID — setDoc merge makes this idempotent
+  const docId = user.uid + '_' + lessonIdStr;
 
-  // 1. Update localStorage immediately (optimistic)
+  // 1. Update localStorage immediately (optimistic write)
   const localProgress = JSON.parse(localStorage.getItem(`progress_${user.uid}`) || '[]');
   const idx = localProgress.findIndex(p => p.lessonId === lessonIdStr);
   if (idx > -1) {
@@ -313,10 +358,12 @@ export async function updateProgress(lessonId, status) {
     if (statusStr === 'completed') dbData.completedAt = serverTimestamp();
 
     await setDoc(doc(db, "progress", docId), dbData, { merge: true });
-    console.log('[Progress] Saved | uid:', user.uid, '| lesson:', lessonIdStr, '→', statusStr);
+    console.log('[Progress] updateProgress — saved | doc:', docId, '→', statusStr);
   } catch (err) {
-    console.error('[Progress] Firestore write FAILED:', err.code, err.message);
-    throw err; // Propagate so the lesson page can surface the error to the user
+    console.error('[Progress] updateProgress — Firestore write FAILED:', err.code, err.message);
+    // Restore localStorage to pre-write state so the optimistic UI doesn't lie
+    localStorage.setItem(`progress_${user.uid}`, JSON.stringify(localProgress));
+    throw err;
   }
 }
 

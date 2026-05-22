@@ -51,14 +51,16 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.1';
-    import { loginUser, onAuthChange, resetPassword } from './js/auth.js?v=1.1';
+    import { loginUser, onAuthChange, resetPassword, createUserProfileIfMissing } from './js/auth.js?v=1.1';
 
     renderNavbar('login');
     renderFooter();
 
     // Redirect if already logged in
-    onAuthChange((user) => {
+    onAuthChange(async (user) => {
       if (user) {
+        // Ensure the users/{uid} document exists before redirecting
+        await createUserProfileIfMissing(user.uid);
         window.location.href = 'dashboard.html';
       }
     });

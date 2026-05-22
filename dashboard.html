@@ -62,7 +62,7 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.0';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing, getProgress } from './js/auth.js?v=1.0';
 
     renderNavbar('dashboard');
     renderFooter();
@@ -97,18 +97,14 @@
     }
 
     /**
-     * Load user progress from Firestore.
-     * apiRequest wraps getProgress() in { progress: [...] }
+     * Load user progress from Firestore by calling getProgress() directly.
+     * Returns a plain ARRAY of { lessonId, status, userId, … }.
+     * Bypasses the apiRequest { progress: [...] } wrapper to avoid
+     * any method / shape mismatch.
      */
-    async function loadProgress(user) {
+    async function loadProgressFromFirestore() {
       try {
-        if (!user) return {};
-        const data = await apiRequest('/api/progress');
-        const items = Array.isArray(data)               // direct import
-          ? data
-          : (data && Array.isArray(data.progress)        // via apiRequest wrapper
-            ? data.progress
-            : []);
+        const items = await getProgress();
         return items;
       } catch (err) {
         console.warn('loadProgress error:', err.code, err.message);
@@ -117,8 +113,7 @@
     }
 
     /**
-     * Update the progress bar and percentage label.
-     * Called after loadProgress + renderLessons completes.
+     * Update the progress bar and percentage label on every render.
      */
     function updateProgressBar(completedCount, totalLessons) {
       const pct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
@@ -129,7 +124,8 @@
     }
 
     /**
-     * Render lesson cards and update the progress bar
+     * Render lesson cards and update the progress bar.
+     * Called once on initial page load and on every refresh.
      */
     function renderLessons(lessons) {
       const container = document.getElementById('lessonsContainer');
@@ -149,7 +145,7 @@
       const cardsHTML = lessons.map(lesson => {
         const lessonId  = String(lesson.id);
         const status    = userProgress[lessonId] || '';
-        let   statusText = '';
+        let   statusText  = '';
         let   statusClass = '';
 
         if (status === 'completed') {
@@ -160,8 +156,9 @@
           statusClass = 'in-progress';
         }
 
-        const badgeClass = lesson.difficulty === 'beginner'    ? 'badge-beginner'
-                         : lesson.difficulty === 'intermediate'? 'badge-intermediate'
+        const badgeClass = lesson.difficulty === 'beginner'
+                         ? 'badge-beginner'
+                         : lesson.difficulty === 'intermediate' ? 'badge-intermediate'
                          : 'badge-advanced';
 
         return `
@@ -170,7 +167,9 @@
               <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
               <h3>${lesson.title}</h3>
               <p>${lesson.topic}</p>
-              ${statusText ? `<span class="lesson-card-status ${statusClass}">${statusText}</span>` : `<span class="lesson-card-status" style="color: var(--color-text-secondary);">Not started</span>`}
+              ${statusText
+                ? `<span class="lesson-card-status ${statusClass}">${statusText}</span>`
+                : `<span class="lesson-card-status" style="color: var(--color-text-secondary);">Not started</span>`}
             </div>
           </a>`;
       }).join('');
@@ -184,18 +183,29 @@
         if (user) {
           document.getElementById('welcomeText').textContent = 'My Lessons';
 
+          // Ensure Firestore users/{uid} profile exists
+          await createUserProfileIfMissing(user.uid);
+
+          // Load user profile (with fallback if doc was just created)
           getUserProfile(user.uid).then(profile => {
             if (profile) {
-              document.getElementById('profileName').textContent = profile.name || 'User';
+              document.getElementById('profileName').textContent  = profile.name || 'User';
               document.getElementById('profileEmail').textContent = user.email;
               document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
             } else {
-              document.getElementById('profileName').textContent = 'Learner';
+              document.getElementById('profileName').textContent  = 'Learner';
               document.getElementById('profileEmail').textContent = user.email;
             }
-          }).catch(apiErr => console.error('Profile load error:', apiErr));
+          }).catch(_ => {
+            // getUserProfile failed — still show what we have
+            document.getElementById('profileName').textContent  = 'Learner';
+            document.getElementById('profileEmail').textContent = user.email;
+          });
 
-          userProgress = await loadProgress(user);
+          // Load progress; if getProgress gets a real array we pass it through,
+          // if it wraps inside { progress: [...] } we unwrap it.
+          const firestoreItems = await loadProgressFromFirestore();
+          userProgress = Array.isArray(firestoreItems) ? firestoreItems : [];
         } else {
           window.location.href = 'login.html';
         }
@@ -210,24 +220,23 @@
 
     /**
      * Re-load progress whenever the page becomes visible again.
-     * Fires on direct navigation, back/forward, and when the browser restores
-     * the page from the bfcache (back-button cache).
+     * Fires on direct navigation, back/forward, and bfcache restore.
      */
     async function refreshProgressOnShow() {
       const user = getCurrentUser();
       if (!user) return;
-      userProgress = await loadProgress(user);
+      userProgress = await loadProgressFromFirestore();
       const lessons = await loadLessons();
       renderLessons(lessons);
     }
 
-    // pageshow – fires on every navigation to this page, including back/forward
+    // pageshow — fires on every navigation to this page
     window.addEventListener('pageshow', refreshProgressOnShow);
 
-    // custom event — emitted by lesson.html after a successful mark-complete
+    // progress-updated — emitted by lesson.html after a successful mark-complete
     window.addEventListener('progress-updated', refreshProgressOnShow);
 
-    // storage – fires when localStorage is updated by a different tab/window
+    // storage — fires when localStorage is updated by another tab/window
     window.addEventListener('storage', (e) => {
       if (e.key && e.key.startsWith('progress_')) {
         refreshProgressOnShow();
