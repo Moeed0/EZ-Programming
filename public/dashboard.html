@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your learning dashboard - browse lessons and track progress.">
+  <title>Dashboard - EZ Programming</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Dashboard Content -->
+  <div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <h1 id="welcomeText">My Lessons</h1>
+      <p>Browse available lessons and track your learning progress.</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-container" id="progressSection">
+      <div class="progress-header">
+        <span>Overall Progress</span>
+        <span id="progressText">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Lessons Grid -->
+    <div id="lessonsContainer">
+      <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading lessons...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <script type="module">
+    import { renderNavbar, renderFooter, showToast } from '/js/navbar.js';
+    import { onAuthChange, apiRequest, getCurrentUser } from '/js/auth.js';
+
+    renderNavbar('dashboard');
+    renderFooter();
+
+    // Sample lessons data (used when backend is not available)
+    const sampleLessons = [
+      {
+        id: 'lesson-1',
+        title: 'Hello World in Python',
+        topic: 'Introduction',
+        difficulty: 'beginner',
+        orderIndex: 1,
+        isPublished: true
+      },
+      {
+        id: 'lesson-2',
+        title: 'Variables and Data Types',
+        topic: 'Basics',
+        difficulty: 'beginner',
+        orderIndex: 2,
+        isPublished: true
+      },
+      {
+        id: 'lesson-3',
+        title: 'Conditional Statements',
+        topic: 'Control Flow',
+        difficulty: 'beginner',
+        orderIndex: 3,
+        isPublished: true
+      },
+      {
+        id: 'lesson-4',
+        title: 'Loops - For and While',
+        topic: 'Control Flow',
+        difficulty: 'intermediate',
+        orderIndex: 4,
+        isPublished: true
+      },
+      {
+        id: 'lesson-5',
+        title: 'Functions in Python',
+        topic: 'Functions',
+        difficulty: 'intermediate',
+        orderIndex: 5,
+        isPublished: true
+      },
+      {
+        id: 'lesson-6',
+        title: 'Lists and Tuples',
+        topic: 'Data Structures',
+        difficulty: 'intermediate',
+        orderIndex: 6,
+        isPublished: true
+      }
+    ];
+
+    let userProgress = {};
+
+    /**
+     * Load lessons from API or use sample data
+     */
+    async function loadLessons() {
+      try {
+        const data = await apiRequest('/api/lessons');
+        return data.lessons.length > 0 ? data.lessons : sampleLessons;
+      } catch (error) {
+        console.log('Using sample lessons data:', error.message);
+        return sampleLessons;
+      }
+    }
+
+    /**
+     * Load user progress from API
+     */
+    async function loadProgress() {
+      try {
+        const user = getCurrentUser();
+        if (!user) return {};
+
+        const data = await apiRequest('/api/progress');
+        const progressMap = {};
+        data.progress.forEach(p => {
+          progressMap[p.lessonId] = p.status;
+        });
+        return progressMap;
+      } catch (error) {
+        console.log('Could not load progress:', error.message);
+        return {};
+      }
+    }
+
+    /**
+     * Render lesson cards
+     */
+    function renderLessons(lessons) {
+      const container = document.getElementById('lessonsContainer');
+      const completedCount = Object.values(userProgress).filter(s => s === 'completed').length;
+      const totalLessons = lessons.length;
+      const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+      // Update progress bar
+      document.getElementById('progressText').textContent = `${progressPercent}%`;
+      document.getElementById('progressFill').style.width = `${progressPercent}%`;
+
+      if (lessons.length === 0) {
+        container.innerHTML = `
+          <div class="text-center" style="padding: 60px 24px;">
+            <p class="text-secondary">No lessons available yet. Check back soon!</p>
+          </div>
+        `;
+        return;
+      }
+
+      const cardsHTML = lessons.map(lesson => {
+        const status = userProgress[lesson.id] || '';
+        let statusText = '';
+        let statusClass = '';
+
+        if (status === 'completed') {
+          statusText = 'Completed';
+          statusClass = 'completed';
+        } else if (status === 'in-progress') {
+          statusText = 'In Progress';
+          statusClass = 'in-progress';
+        }
+
+        const badgeClass = lesson.difficulty === 'beginner' ? 'badge-beginner' :
+                           lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
+
+        return `
+          <a href="/lesson.html?id=${lesson.id}" style="text-decoration: none;">
+            <div class="card lesson-card card-clickable">
+              <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
+              <h3>${lesson.title}</h3>
+              <p>${lesson.topic}</p>
+              ${statusText ? `<span class="lesson-card-status ${statusClass}">${statusText}</span>` : `<span class="lesson-card-status" style="color: var(--color-text-secondary);">Not started</span>`}
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      container.innerHTML = `<div class="lessons-grid">${cardsHTML}</div>`;
+    }
+
+    // Initialize dashboard
+    onAuthChange(async (user) => {
+      if (user) {
+        document.getElementById('welcomeText').textContent = 'My Lessons';
+        userProgress = await loadProgress();
+      } else {
+        document.getElementById('progressSection').classList.add('hidden');
+      }
+
+      const lessons = await loadLessons();
+      renderLessons(lessons);
+    });
+  </script>
+</body>
+</html>

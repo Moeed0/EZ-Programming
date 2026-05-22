@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create your EZ Programming account and start learning Python.">
+  <title>Sign Up - EZ Programming</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <div id="navbar"></div>
+
+  <!-- Sign Up Form -->
+  <div class="auth-container">
+    <div class="card auth-card">
+      <h1>Create Your Account</h1>
+      <p class="auth-subtitle">Start learning programming with interactive lessons.</p>
+
+      <form id="signupForm">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name</label>
+          <input class="form-input" type="text" id="name" placeholder="Enter your name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input class="form-input" type="email" id="email" placeholder="name@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-input" type="password" id="password" placeholder="Create a password" required minlength="8">
+          <p class="form-hint">Password must be at least 8 characters and include a number.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirmPassword">Confirm Password</label>
+          <input class="form-input" type="password" id="confirmPassword" placeholder="Confirm your password" required>
+        </div>
+
+        <p id="signupError" class="form-error hidden"></p>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 8px;" id="signupBtn">Sign Up</button>
+      </form>
+
+      <p class="auth-footer">
+        Already have an account? <a href="/login.html">Log In</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div id="footer"></div>
+
+  <script type="module">
+    import { renderNavbar, renderFooter, showToast } from '/js/navbar.js';
+    import { signupUser, onAuthChange } from '/js/auth.js';
+
+    renderNavbar('signup');
+    renderFooter();
+
+    // Redirect if already logged in
+    onAuthChange((user) => {
+      if (user) {
+        window.location.href = '/dashboard.html';
+      }
+    });
+
+    // Handle signup form submission
+    const form = document.getElementById('signupForm');
+    const errorEl = document.getElementById('signupError');
+    const signupBtn = document.getElementById('signupBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Validation
+      if (password !== confirmPassword) {
+        errorEl.textContent = 'Passwords do not match.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      if (password.length < 8) {
+        errorEl.textContent = 'Password must be at least 8 characters.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      if (!/\d/.test(password)) {
+        errorEl.textContent = 'Password must include at least one number.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        signupBtn.disabled = true;
+        signupBtn.textContent = 'Creating account...';
+
+        await signupUser(name, email, password);
+        showToast('Account created successfully!', 'success');
+        window.location.href = '/dashboard.html';
+      } catch (error) {
+        console.error('Signup error:', error);
+        let message = 'Something went wrong. Please try again.';
+        if (error.code === 'auth/email-already-in-use') {
+          message = 'An account with this email already exists.';
+        } else if (error.code === 'auth/weak-password') {
+          message = 'Password is too weak. Use at least 8 characters.';
+        } else if (error.code === 'auth/invalid-email') {
+          message = 'Please enter a valid email address.';
+        }
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Sign Up';
+      }
+    });
+  </script>
+</body>
+</html>
