@@ -174,12 +174,18 @@
 
         const data = await apiRequest('/api/progress');
         const progressMap = {};
-        data.progress.forEach(p => {
-          progressMap[p.lessonId] = p.status;
-        });
+        
+        console.log('Progress data received:', data.progress);
+        
+        if (data && data.progress) {
+          data.progress.forEach(p => {
+            // Force status to string and handle both numeric/string IDs
+            progressMap[String(p.lessonId)] = String(p.status);
+          });
+        }
         return progressMap;
       } catch (error) {
-        console.log('Could not load progress:', error.message);
+        console.error('Could not load progress:', error);
         return {};
       }
     }
