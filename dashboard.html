@@ -35,16 +35,7 @@
       </div>
     </div>
 
-    <!-- Progress Bar -->
-    <div class="progress-bar-container" id="progressSection">
-      <div class="progress-header">
-        <span>Overall Progress</span>
-        <span id="progressText">0%</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-      </div>
-    </div>
+<!-- Progress Bar Removed as per user request -->
 
     <!-- Lessons Grid -->
     <div id="lessonsContainer">
@@ -59,8 +50,8 @@
   <div id="footer"></div>
 
   <script type="module">
-    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.3';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.3';
+    import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.4';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.4';
 
     renderNavbar('dashboard');
     renderFooter();
@@ -212,7 +203,8 @@
       }
 
       const cardsHTML = lessons.map(lesson => {
-        const status = userProgress[lesson.id] || '';
+        const lessonId = String(lesson.id);
+        const status = userProgress[lessonId] || '';
         let statusText = '';
         let statusClass = '';
 
