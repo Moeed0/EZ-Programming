@@ -20,7 +20,7 @@
     <div class="dashboard-header">
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
         <div>
-          <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h1>
+          <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h4>
           <p class="text-secondary">Browse available lessons and track your learning. Click a lesson to begin!</p>
         </div>
       </div>
@@ -61,7 +61,7 @@
 
     <script type="module">
       import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-      import { onAuthChange, apiRequest, getCurrentUser, getUserProfile } from './js/auth.js?v=1.0';
+      import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing, getProgress } from './js/auth.js?v=1.0';
 
       renderNavbar('dashboard');
       renderFooter();
@@ -73,9 +73,9 @@
         if (!p) return;
         const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
         const cls = type === 'err' ? 'log-error'
-                  : type === 'warn' ? 'log-warn'
-                  : type === 'ok'   ? 'log-success'
-                  : 'log-info';
+                   : type === 'warn' ? 'log-warn'
+                   : type === 'ok'   ? 'log-success'
+                   : 'log-info';
         p.innerHTML = '<div class="log-entry ' + cls + '">[' + ts + '] ' + msg + '</div>' + p.innerHTML;
         console.log('[Dash]', msg);
         if (p.scrollHeight > 400) p.scrollTop = p.scrollHeight - 400;
@@ -124,22 +124,20 @@
        * The caller (onAuthChange / refreshProgressOnShow) stores
        * the result into userProgress as an array.
        */
-      async function loadProgress() {
+      async function loadProgressFromFirestore() {
         var user = getCurrentUser();
-        if (!user) { D('loadProgress — getCurrentUser() returned null', 'warn'); return []; }
-        D('loadProgress | uid: ' + user.uid, 'info');
+        if (!user) { D('loadProgressFromFirestore — getCurrentUser() returned null', 'warn'); return []; }
+        D('loadProgressFromFirestore | uid: ' + user.uid, 'info');
         try {
-          var data  = await apiRequest('/api/progress');
-          var items = data && data.progress && data.progress.length ? data.progress
-                    : (data && data.length ? data : []);
-          D('loadProgress — ' + items.length + ' items returned from getProgress()', 'ok');
-          items.forEach(function(p) {
+          const progress = await getProgress();
+          D('loadProgressFromFirestore — ' + progress.length + ' items returned from getProgress()', 'ok');
+          progress.forEach(function(p) {
             D('  lesson=' + p.lessonId + ' status=' + p.status + ' userId=' + p.userId, 'ok');
           });
-          return items;
+          return progress;
         } catch(err) {
-          D('loadProgress FAILED: ' + (err.code||'') + ' ' + (err.message||err), 'err');
-          console.error('[Dash] loadProgress error:', err);
+          D('loadProgressFromFirestore FAILED: ' + (err.code||'') + ' ' + (err.message||err), 'err');
+          console.error('[Dash] loadProgressFromFirestore error:', err);
           return [];
         }
       }
@@ -147,13 +145,13 @@
       /**
        * Update progress bar width + percentage label.
        */
-      function updateProgressBar(done, total) {
-        var pct = total > 0 ? Math.round(done / total * 100) : 0;
+      function updateProgressBar(completedCount, totalLessons) {
+        var pct = totalLessons > 0 ? Math.round(completedCount / totalLessons * 100) : 0;
         var fill = document.getElementById('progressFill');
         var lbl  = document.getElementById('progressPercent');
         if (fill) fill.style.width = pct + '%';
         if (lbl)  lbl.textContent  = pct + '%';
-        D('progressBar: ' + done + '/' + total + ' = ' + pct + '%');
+        D('progressBar: ' + completedCount + '/' + totalLessons + ' = ' + pct + '%');
       }
 
       /**
@@ -181,14 +179,14 @@
           var b = l.difficulty === 'beginner' ? 'badge-beginner'
                 : l.difficulty === 'intermediate' ? 'badge-intermediate'
                 : 'badge-advanced';
-      return '<a href="lesson.html?id=' + l.id + '" style="text-decoration:none">'
-           + '<div class="card lesson-card card-clickable">'
-           + '  <span class="lesson-card-badge ' + b + '">' + l.difficulty + '</span>'
-           + '  <h3>' + l.title + '</h3><p>' + l.topic + '</p>'
-           + (st ? '<span class="lesson-card-status ' + sc + '">' + st + '</span>'
-                 : '<span class="lesson-card-status" style="color:var(--color-text-secondary)">Not started</span>')
-           + '</div></a>';
-      }).join('') + '</div>';
+        return '<a href="lesson.html?id=' + l.id + '" style="text-decoration:none">'
+            + '<div class="card lesson-card card-clickable">'
+            + '  <span class="lesson-card-badge ' + b + '">' + l.difficulty + '</span>'
+            + '  <h3>' + l.title + '</h3><p>' + l.topic + '</p>'
+            + (st ? '<span class="lesson-card-status ' + sc + '">' + st + '</span>'
+                  : '<span class="lesson-card-status" style="color:var(--color-text-secondary)">Not started</span>')
+            + '</div></a>';
+        }).join('') + '</div>';
       }
 
       // ── Init on page load (handles already-authed sessions) ──────────────────────
@@ -231,7 +229,7 @@
           document.getElementById('profileEmail').textContent = user.email;
         });
 
-        const lessonsAndProgress = await Promise.all([loadLessons(), loadProgress()]);
+        const lessonsAndProgress = await Promise.all([loadLessons(), loadProgressFromFirestore()]);
         userProgress = lessonsAndProgress[1];
         renderLessons(lessonsAndProgress[0]);
       }
@@ -243,7 +241,7 @@
         var user = getCurrentUser();
         if (!user) return;
         D('refreshProgressOnShow — pageshow / back-button / progress-updated event');
-        userProgress = await loadProgress();
+        userProgress = await loadProgressFromFirestore();
         var lessons  = await loadLessons();
         renderLessons(lessons);
       }
