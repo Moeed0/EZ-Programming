@@ -279,7 +279,7 @@
         return;
       }
       showToast("Manual Syncing...", "info");
-      userProgress = await loadProgress(user);
+     userProgress = await loadProgress(user);
       const lessons = await loadLessons();
       renderLessons(lessons);
       alert(`Sync Complete!\nUser ID: ${user.uid}\nItems Found: ${Object.keys(userProgress).length}`);

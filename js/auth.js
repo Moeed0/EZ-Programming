@@ -33,6 +33,30 @@ async function withTimeout(promise, ms = 10000) {
   ]);
 }
 
+// ============================================
+// Auth helper — local module-level function
+// ============================================
+
+/**
+ * Map Firebase Auth error codes to user-facing strings.
+ * Returns undefined for unknown codes (caller falls back to 'Something went wrong...').
+ */
+function authErrorMessage(code) {
+  return ({
+    'auth/invalid-email':          'Please enter a valid email address.',
+    'auth/user-not-found':         'No account found with this email. Please sign up first.',
+    'auth/wrong-password':         'Incorrect password.',
+    'auth/invalid-credential':     'Invalid email or password.',
+    'auth/email-already-in-use':   'An account with this email already exists. Try logging in instead.',
+    'auth/weak-password':          'Password is too weak. Use at least 8 characters.',
+    'auth/user-disabled':          'This account has been disabled. Contact support.',
+    'auth/too-many-requests':      'Too many failed attempts. Please try again in a few minutes.',
+    'auth/network-request-failed': 'Network error. Check your internet connection and try again.',
+    'auth/operation-not-allowed':  'Email/password sign-in is disabled. Contact support.',
+    'auth/popup-closed-by-user':   'Sign-in was cancelled.',
+  })[code];
+}
+
 // ---- AUTH FUNCTIONS ----
 
 export async function signupUser(name, email, password) {
@@ -50,8 +74,11 @@ export async function signupUser(name, email, password) {
 
     return user;
   } catch (err) {
-    console.error('[Auth] signupUser failed:', err.code, err.message);
-    // Re-throw so the signup page can show a friendly message
+    console.error('[Auth] signupUser FAILED:', err.code || 'NO-CODE', err.message);
+
+    const friendly = authErrorMessage(err.code);
+    if (friendly) err._friendly = friendly;
+
     throw err;
   }
 }
@@ -61,23 +88,10 @@ export async function loginUser(email, password) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (err) {
-    console.error('[Auth] loginUser failed:', err.code, err.message);
+    console.error('[Auth] loginUser FAILED:', err.code || 'NO-CODE', err.message);
 
-    // Attach a friendly default message directly to the error
-    // so the signup/login pages can display it without another lookup.
-    const friendlyMessages = {
-      'auth/invalid-credential':       'Invalid email or password.',
-      'auth/user-not-found':           'No account found with this email.',
-      'auth/wrong-password':           'Incorrect password.',
-      'auth/invalid-email':            'Please enter a valid email address.',
-      'auth/user-disabled':            'This account has been disabled. Contact support.',
-      'auth/too-many-requests':        'Too many failed attempts. Please try again later.',
-      'auth/network-request-failed':   'Network error. Check your internet connexion.',
-      'auth/operation-not-allowed':    'Email/password sign-in is disabled. Contact support.',
-      'auth/email-already-in-use':     'An account with this email already exists.',
-      'auth/weak-password':            'Password is too weak. Use at least 8 characters.',
-    };
-    err._friendly = friendlyMessages[err.code] || 'Something went wrong. Please try again.';
+    const friendly = authErrorMessage(err.code);
+    if (friendly) err._friendly = friendly;
     throw err;
   }
 }
@@ -87,8 +101,13 @@ export async function resetPassword(email) {
 }
 
 export async function getUserProfile(uid) {
-  const userDoc = await getDoc(doc(db, "users", uid));
-  return userDoc.exists() ? userDoc.data() : null;
+  try {
+    const userDoc = await getDoc(doc(db, "users", uid));
+    return userDoc.exists() ? userDoc.data() : null;
+  } catch (err) {
+    console.warn('[Profile] getUserProfile failed for uid:', uid, err.code, err.message);
+    return null;   // Never throws — dashboard handles null as "Learner"
+  }
 }
 
 export async function logoutUser() {

@@ -111,8 +111,8 @@
         showToast('Account created successfully!', 'success');
         window.location.href = 'dashboard.html';
       } catch (error) {
-        console.error('Signup error:', error);
-        // _friendly is set by auth.js loginUser/signupUser for all known codes
+        console.error('[Signup] caught:', error.code || 'NO-CODE', error.message);
+        // _friendly is set by auth.js signupUser for all known codes
         errorEl.textContent = error._friendly || 'Something went wrong. Please try again.';
         errorEl.classList.remove('hidden');
         signupBtn.disabled = false;

@@ -83,7 +83,7 @@
         showToast('Logged in successfully!', 'success');
         window.location.href = 'dashboard.html';
       } catch (error) {
-        console.error('Login error:', error);
+        console.error('[Login] caught:', error.code || 'NO-CODE', error.message);
         // _friendly is set by auth.js loginUser for all known codes
         errorEl.textContent = error._friendly || 'Something went wrong. Please try again.';
         errorEl.classList.remove('hidden');
