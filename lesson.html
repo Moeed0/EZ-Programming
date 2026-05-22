@@ -206,6 +206,74 @@
             hint: 'Lists use square brackets []. Tuples use parentheses (). Use .append() to add items to a list.'
           }
         ]
+      },
+      'lesson-7': {
+        lesson: { id: 'lesson-7', title: 'Dictionaries (Key-Value)', topic: 'Data Structures', difficulty: 'intermediate' },
+        sections: [
+          {
+            heading: 'Understanding Dictionaries',
+            content: `Dictionaries are used to store data values in key:value pairs. A dictionary is a collection which is ordered, changeable and does not allow duplicates.\n\n<pre><code>thisdict = {\n  "brand": "Ford",\n  "model": "Mustang",\n  "year": 1964\n}\nprint(thisdict["brand"])</code></pre>`
+          },
+          {
+            heading: 'Accessing and Modifying',
+            content: `You can access values by their keys and add or change them using the same syntax.\n\n<pre><code># Change value\nthisdict["year"] = 2020\n\n# Add new key\nthisdict["color"] = "red"</code></pre>`
+          }
+        ],
+        exercises: [
+          {
+            prompt: 'Create a dictionary for a student and print their grade.',
+            starterCode: '# Create a student dictionary\nstudent = {\n    "name": "Moeed",\n    "age": 21,\n    "grade": "A"\n}\n\n# Print the student name and grade\nprint(student["name"], "scored a", student["grade"])\n',
+            hint: 'Access values using square brackets with the key name in quotes.'
+          }
+        ]
+      },
+      'lesson-8': {
+        lesson: { id: 'lesson-8', title: 'List Comprehensions', topic: 'Advanced Basics', difficulty: 'intermediate' },
+        sections: [
+          {
+            heading: 'Elegant Lists with Comprehension',
+            content: `List comprehension offers a shorter syntax when you want to create a new list based on the values of an existing list.\n\n<pre><code>fruits = ["apple", "banana", "cherry"]\nnewlist = [x for x in fruits if "a" in x]\nprint(newlist)</code></pre>`
+          }
+        ],
+        exercises: [
+          {
+            prompt: 'Create a list of squares using list comprehension.',
+            starterCode: '# Generate squares of numbers 0 to 9\nsquares = [x**2 for x in range(10)]\nprint(squares)\n',
+            hint: 'The syntax is [expression for item in iterable].'
+          }
+        ]
+      },
+      'lesson-9': {
+        lesson: { id: 'lesson-9', title: 'Error Handling (Try/Except)', topic: 'Error Handling', difficulty: 'intermediate' },
+        sections: [
+          {
+            heading: 'Handling Exceptions',
+            content: `The <code>try</code> block lets you test a block of code for errors. The <code>except</code> block lets you handle the error.\n\n<pre><code>try:\n    print(x)\nexcept NameError:\n    print("Variable x is not defined")\nexcept:\n    print("Something else went wrong")</code></pre>`
+          }
+        ],
+        exercises: [
+          {
+            prompt: 'Handle a division by zero error.',
+            starterCode: 'try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("You cannot divide by zero!")\n',
+            hint: 'Use try: followed by the risky code, then except ErrorName: for the fix.'
+          }
+        ]
+      },
+      'lesson-10': {
+        lesson: { id: 'lesson-10', title: 'File I/O Basics', topic: 'File Handling', difficulty: 'advanced' },
+        sections: [
+          {
+            heading: 'Writing and Reading Files',
+            content: `Python uses the <code>open()</code> function to handle files. Common modes are "r" (read), "w" (write), and "a" (append).\n\n<pre><code># Writing to a file\nf = open("demofile.txt", "w")\nf.write("Hello World!")\nf.close()</code></pre>`
+          }
+        ],
+        exercises: [
+          {
+            prompt: 'Simulate writing and reading a file.',
+            starterCode: '# In browser mode (Pyodide), file access is virtual\nprint("Writing... Hello Python!")\ndata = "Hello Python!"\nprint("Reading... " + data)\n',
+            hint: 'While real file I/O is limited in browsers, the logic remains the same.'
+          }
+        ]
       }
     };
 

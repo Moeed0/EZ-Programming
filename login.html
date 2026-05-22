@@ -31,6 +31,10 @@
           <input class="form-input" type="password" id="password" placeholder="Enter your password" required>
         </div>
 
+        <div style="text-align: right; margin-top: -8px; margin-bottom: 16px;">
+          <a href="#" id="forgotPasswordBtn" style="font-size: 0.8125rem; color: var(--color-primary); font-weight: 500;">Forgot Password?</a>
+        </div>
+
         <p id="loginError" class="form-error hidden"></p>
 
         <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 8px;" id="loginBtn">Log In</button>
@@ -47,7 +51,7 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js';
-    import { loginUser, onAuthChange } from './js/auth.js';
+    import { loginUser, onAuthChange, resetPassword } from './js/auth.js';
 
     renderNavbar('login');
     renderFooter();
@@ -90,6 +94,25 @@
         errorEl.classList.remove('hidden');
         loginBtn.disabled = false;
         loginBtn.textContent = 'Log In';
+      }
+    });
+
+    // Forgot password handler
+    document.getElementById('forgotPasswordBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      
+      if (!email) {
+        showToast('Please enter your email address first.', 'error');
+        return;
+      }
+
+      try {
+        await resetPassword(email);
+        showToast('Password reset link sent to your email!', 'success');
+      } catch (error) {
+        console.error('Reset error:', error);
+        showToast('Failed to send reset link. Check your email.', 'error');
       }
     });
   </script>
