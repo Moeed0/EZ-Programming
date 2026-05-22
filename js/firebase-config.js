@@ -20,4 +20,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Connectivity Diagnostic
+console.log('Firebase Initialized for project:', firebaseConfig.projectId);
+
 export { app, auth, db };

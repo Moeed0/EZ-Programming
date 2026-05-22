@@ -53,8 +53,13 @@ export async function signupUser(name, email, password) {
 }
 
 export async function loginUser(email, password) {
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
-  return userCredential.user;
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (err) {
+    console.error('Firebase Login Error:', err.code, err.message);
+    throw err;
+  }
 }
 
 export async function resetPassword(email) {
