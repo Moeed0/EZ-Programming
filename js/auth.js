@@ -127,20 +127,27 @@ export async function getProgress() {
   const user = auth.currentUser;
   if (!user) return [];
 
-  // Try to load from LocalStorage first (for instant speed)
-  const localProgress = JSON.parse(localStorage.getItem(`progress_${user.uid}`) || '[]');
+  const localKey = `progress_${user.uid}`;
+  const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
   
   try {
     const q = query(collection(db, "progress"), where("userId", "==", user.uid));
     const snapshot = await withTimeout(getDocs(q), 5000);
-    const firestoreProgress = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Merge and sync LocalStorage
-    localStorage.setItem(`progress_${user.uid}`, JSON.stringify(firestoreProgress));
-    return firestoreProgress;
+    // Smart merge: Firestore is the source of truth, but don't lose local items not yet synced
+    const merged = [...firestoreData];
+    localData.forEach(lp => {
+      if (!merged.find(fp => fp.lessonId === lp.lessonId)) {
+        merged.push(lp);
+      }
+    });
+
+    localStorage.setItem(localKey, JSON.stringify(merged));
+    return merged;
   } catch (err) {
-    console.warn('Firestore progress load failed, using local fallback:', err);
-    return localProgress;
+    console.warn('Firestore progress load failed, using local only:', err);
+    return localData;
   }
 }
 
