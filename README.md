@@ -1,68 +1,83 @@
-# EZ Programming (GitHub Pages Version)
+# EZ Programming
 
-EZ Programming is a beginner-friendly interactive Python learning platform. This version is designed to run directly on **GitHub Pages** without any backend server.
+EZ Programming is a beginner-friendly interactive Python learning platform, designed to run directly on **GitHub Pages** with **Firebase Auth** + **Firestore** — no backend server required.
 
-## FAQ & Troubleshooting
+## Live Demo
 
-### GitHub Security Alert: "Google API Key leaked"
-You might see a GitHub alert about a leaked API key. 
-**Don't worry!** Firebase API keys are meant to be public so the browser can connect to the database. To keep it secure:
-1. Go to your **Google Cloud Console > Credentials**.
-2. Restrict the API key to "Websites" and add your GitHub Pages link (e.g., `https://Moeed0.github.io/`).
-3. This prevents other people from using your key on their own websites.
+`https://zainasghar294-sudo.github.io/EZ-Programming/`
 
-## 🚀 Live Demo
-Once you enable GitHub Pages in your repo settings, your site will be live at:
-`https://Moeed0.github.io/EZ-Programming/`
+## Architecture
 
-## 🛠️ How it works
-- **Frontend-only**: All logic runs in the browser. 
-- **Firebase**: Uses Firebase Firestore directly for database operations and Firebase Auth for user management.
-- **Python in Browser**: Powered by Pyodide and Monaco Editor.
+| Layer | Technology |
+|---|---|
+| Hosting | GitHub Pages |
+| Auth | Firebase Authentication (email / password) |
+| Database | Firebase Firestore (progress tracking, lessons CRUD) |
+| Code Execution | Pyodide (Python compiled to WebAssembly) |
+| Code Editor | Monaco Editor |
+| CSS | Custom vanilla CSS (no framework) |
 
-## ⚠️ Required Setup: Firebase Security Rules
-Since there is no backend, you **must** configure your Firestore Security Rules to allow the frontend to safely read/write data.
+## Project Files
 
-Go to **Firebase Console > Firestore > Rules** and paste this:
+```
+index.html          Home / landing page
+signup.html         New user registration
+login.html          Existing user login
+dashboard.html      Lesson browser + progress cards
+lesson.html         Lesson reader + code editor
+admin.html          Lesson authoring (admin-only)
+js/
+  auth.js           All Firebase business logic
+  firebase-config.js  Firebase SDK initialisation
+  navbar.js         Shared navbar / footer / toast components
+css/style.css       All styles
+firestore.rules     Firestore security rules
+```
 
-```javascript
+## Firestore Data Model
+
+```
+progress/{uid}_{lessonId}
+  ├── userId   string   — UID of the learner
+  ├── lessonId string   — e.g. "lesson-1"
+  ├── status   string   — "completed" | "in-progress" | ""
+  ├── updatedAt timestamp
+  └── completedAt timestamp  (only when status === "completed")
+```
+
+## Firestore Security Rules
+
+```rules
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can read/write their own progress
+  match /databases/{db}/documents {
+    // Users
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Lessons (public read; admin write)
+    match /lessons/{id} {
+      allow read, list: if true;
+      allow write: delete: if request.auth != null
+        && get(/databases/$(db)/documents/users/$(auth.uid)).data.role == 'admin';
+    }
+    // Progress — user can only access their own docs
     match /progress/{docId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
-    }
-    
-    // Anyone can read lessons
-    match /lessons/{lessonId} {
-      allow read: if true;
-      allow write: if request.auth != null; // Allow you to use the Admin panel
-    }
-    
-    match /lessons/{lessonId}/sections/{sectionId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    
-    match /lessons/{lessonId}/exercises/{exerciseId} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-
-    // User profiles
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow list, get: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow update, delete: if request.auth != null
+        && request.auth.uid == resource.data.userId;
     }
   }
 }
 ```
 
 ## Local Development
-Since this uses ES Modules and Firestore, you may need to run a local server to avoid CORS issues:
+
 ```bash
-# If you have python installed
+# Python's built-in server avoids ES module CORS issues
 python -m http.server 3000
+# open http://localhost:3000
 ```
-Then open `http://localhost:3000`.

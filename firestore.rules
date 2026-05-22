@@ -2,72 +2,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Users ──
-    // Anyone signed in can read any user profile
+    // ── Users ────────────────────────────────────────────────────────────────
+
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null
-                   && request.auth.uid == userId;   // users can only edit their own profile
+      allow read, create: if request.auth != null;
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == userId;
     }
 
-    // ── Lessons (public, admin-managed) ──
-    // everyone can read published lessons; only admins can write
+    // ── Lessons ──────────────────────────────────────────────────────────────
+
     match /lessons/{lessonId} {
-      allow read: if true;
-      allow list: if true;
+      allow read, list:   if true;
       allow create, update, delete: if request.auth != null
-                                    && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
 
-      // Sub-collections: sections & exercises
       match /sections/{sectionId} {
-        allow read, list: if true;
+        allow read, list:   if true;
         allow create, update, delete: if request.auth != null
-                                      && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       }
+
       match /exercises/{exerciseId} {
-        allow read, list: if true;
+        allow read, list:   if true;
         allow create, update, delete: if request.auth != null
-                                      && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       }
     }
 
-    // ── Progress / Learning Tracking ──
-    //
-    // Top-level progress/{uid} doc — no leaf data, only a path anchor.
-    // Authenticated users can read their own; everyone can list the anchor.
-    match /progress/{userId} {
-      allow read, list: if request.auth != null
-                        && request.auth.uid == userId;
-      allow create, update, delete: if request.auth != null
-                                    && request.auth.uid == userId;
+    // ── Progress  (flat collection, composite doc IDs: uid_lessonId) ─────────
 
-      // ┌─────────────────────────────────────────────────────────────────┐
-      // │  lessons/{lessonId}  ← individual per-lesson progress document   │
-      // │  ID  ==  lessonId  (e.g. "lesson-1", "lesson-2", …)             │
-      // └─────────────────────────────────────────────────────────────────┘
-      // Only the owner (uid == {userId}) may read / write / delete
-      match /lessons/{lessonId} {
-        allow create: if request.auth != null
-                      && request.auth.uid == userId;
-
-        allow read:   if request.auth != null
-                      && request.auth.uid == userId;
-
-        allow update: if request.auth != null
-                      && request.auth.uid == userId
-                      && // Prevent changing userId field (ownership guard)
-                         (request.resource.data.userId == null
-                          || request.resource.data.userId == userId);
-
-        allow delete: if request.auth != null
-                      && request.auth.uid == userId;
-
-        // Extra guard: deny deep traversal past the lesson doc
-        // (no further sub-collections are defined here)
-      }
+    match /progress/{docId} {
+      allow list, get:   if request.auth != null
+                         && request.auth.uid == resource.data.userId;
+      allow create:      if request.auth != null
+                         && request.auth.uid == resource.data.userId;
+      allow update:      if request.auth != null
+                         && request.auth.uid == resource.data.userId
+                         && (request.resource.data.userId == resource.data.userId
+                             || request.resource.data.userId == null);
+      allow delete:      if request.auth != null
+                         && request.auth.uid == resource.data.userId;
     }
 
-    // ── Fallback: deny everything not explicitly allowed above ──
+    // ── Catch-all — deny everything not explicitly allowed ───────────────────
+
     match /{document=**} {
       allow read, write: if false;
     }

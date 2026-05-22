@@ -127,24 +127,23 @@ export async function getLessonById(lessonId) {
 // ── PROGRESS HELPERS ─────────────────────────────────────────────────────────
 
 /**
- * Fetch ALL lesson progress for the current user from the
- * progress/{uid}/lessons subcollection.
- * Returns [] if the user is not logged in.
+ * Fetch every progress document for the current user from the
+ * flat `progress` collection, filtered by userId field.
+ * Each document ID is  `${uid}_${lessonId}`  (e.g. uid_lesson-1).
  */
 async function getAllUserProgress() {
   const user = auth.currentUser;
   if (!user) return [];
 
   try {
-    const lessonsCol  = collection(db, "progress", user.uid, "lessons");
-    const lessonsSnap = await withTimeout(getDocs(lessonsCol), 8000);
-    console.log('[Progress] Fetched', lessonsSnap.size, 'doc(s) from progress subcollection uid:', user.uid, '| empty:', lessonsSnap.empty);
-    return lessonsSnap.docs.map(d => ({
-      lessonId: d.id,
-      ...d.data()
-    }));
+    const q    = query(collection(db, "progress"), where("userId", "==", user.uid));
+    const snap = await withTimeout(getDocs(q), 8000);
+
+    console.log('[Progress] getAllUserProgress fetched', snap.size, 'for uid:', user.uid);
+
+    return snap.docs.map(d => ({ lessonId: d.id, ...d.data() }));
   } catch (err) {
-    console.warn('[Progress] getAllUserProgress Firestore error:', err.code, err.message);
+    console.warn('[Progress] getAllUserProgress error:', err.code, err.message);
     return [];
   }
 }
@@ -159,24 +158,22 @@ export async function getProgress() {
   const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
 
   try {
-    // Read every lesson progress from the user's subcollection:
-    //   progress/{uid}/lessons/{lessonId}
-    // This avoids flat-doc ID parsing fragilities and works cleanly with Firestore rules.
-    const lessonsCol  = collection(db, "progress", user.uid, "lessons");
-    const lessonsSnap = await withTimeout(getDocs(lessonsCol), 8000);
+    // Query progress docs by userId — composite doc ID prevents duplicates
+    const q    = query(collection(db, "progress"), where("userId", "==", user.uid));
+    const snap = await withTimeout(getDocs(q), 8000);
 
-    const firestoreData = lessonsSnap.docs.map(d => {
+    const firestoreData = snap.docs.map(d => {
       const data = d.data();
       return {
-        lessonId: d.id,          // doc ID == lessonId
-        userId:   data.userId,
+        lessonId: data.lessonId || String(d.id).replace(`${user.uid}_`, ''),
         status:   String(data.status || ''),
+        userId:   data.userId,
         updatedAt: data.updatedAt,
         ...(data.completedAt ? { completedAt: data.completedAt } : {})
       };
     });
 
-    // Smart merge: prefer firestore data, fill gaps from local cache
+    // Merge fresh Firestore data with localStorage fallback
     const merged = [...firestoreData];
     localData.forEach(lp => {
       const match = merged.find(fp => fp.lessonId === lp.lessonId);
@@ -184,39 +181,36 @@ export async function getProgress() {
     });
 
     localStorage.setItem(localKey, JSON.stringify(merged));
-    console.log('[Progress] getProgress loaded', merged.length, 'items from Firestore subcollection for uid', user.uid);
+    console.log('[Progress] Loaded', merged.length, 'items from Firestore for uid:', user.uid);
     return merged;
   } catch (err) {
-    console.warn('[Progress] getProgress Firestore failed, falling back to local:', err.code, err.message);
-    // Merge with whatever is already in local cache
+    console.warn('[Progress] Firestore read failed, using local cache:', err.code);
     return [...localData];
   }
 }
 
 export async function updateProgress(lessonId, status) {
   const user = auth.currentUser;
-  if (!user) {
-    console.error('[Progress] updateProgress called without authenticated user');
-    return;
-  }
+  if (!user) return;
 
   const lessonIdStr = String(lessonId);
   const statusStr   = String(status);
 
-  // ── 1. Save to LocalStorage immediately ─────────────────────────────────────
+  // Composite doc ID (uid_lessonId) — setDoc merge makes this idempotent
+  const docId = user.uid + "_" + lessonIdStr;
+
+  // 1. Update localStorage immediately (optimistic)
   const localProgress = JSON.parse(localStorage.getItem(`progress_${user.uid}`) || '[]');
-  const existingIdx   = localProgress.findIndex(p => p.lessonId === lessonIdStr);
-  if (existingIdx > -1) {
-    localProgress[existingIdx] = { ...localProgress[existingIdx], lessonId: lessonIdStr, status: statusStr, userId: user.uid, updatedAt: new Date().toISOString() };
+  const idx = localProgress.findIndex(p => p.lessonId === lessonIdStr);
+  if (idx > -1) {
+    localProgress[idx] = { ...localProgress[idx], lessonId: lessonIdStr, status: statusStr, userId: user.uid, updatedAt: new Date().toISOString() };
   } else {
     localProgress.push({ lessonId: lessonIdStr, status: statusStr, userId: user.uid, updatedAt: new Date().toISOString() });
   }
   localStorage.setItem(`progress_${user.uid}`, JSON.stringify(localProgress));
-  console.log('[Progress] LocalStorage updated for', lessonIdStr, '→', statusStr, '| uid:', user.uid);
 
-  // ── 2. Save to Firestore subcollection: progress/{uid}/lessons/{lessonId} ────
+  // 2. Save to Firestore: progress/{uid}_{lessonId}
   try {
-    const docRef = doc(db, "progress", user.uid, "lessons", lessonIdStr);
     const dbData = {
       userId:   user.uid,
       lessonId: lessonIdStr,
@@ -225,12 +219,11 @@ export async function updateProgress(lessonId, status) {
     };
     if (statusStr === 'completed') dbData.completedAt = serverTimestamp();
 
-    await setDoc(docRef, dbData, { merge: true });
-    console.log('[Progress] ✅Saved to Firestore subcollection:', user.uid, '/lessons/', lessonIdStr, '→', statusStr);
+    await setDoc(doc(db, "progress", docId), dbData, { merge: true });
+    console.log('[Progress] Saved | uid:', user.uid, '| lesson:', lessonIdStr, '→', statusStr);
   } catch (err) {
-    console.error('[Progress] ❌Firestore write FAILED:', err.code, err.message);
-    // Still re-throw so the lesson page can show the error
-    throw err;
+    console.error('[Progress] Firestore write FAILED:', err.code, err.message);
+    throw err; // Propagate so the lesson page can surface the error to the user
   }
 }
 

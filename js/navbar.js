@@ -1,12 +1,11 @@
 // ============================================
-// Navbar Component - Shared across all pages
+// Navbar Component — Shared across all pages
 // ============================================
 import { onAuthChange, logoutUser } from './auth.js';
 
-/**
- * Render the navbar into the page
- * Call this on every page that needs the navbar
- */
+// ============================================
+// renderNavbar()
+// ============================================
 export function renderNavbar(activePage = '') {
   const navContainer = document.getElementById('navbar');
   if (!navContainer) return;
