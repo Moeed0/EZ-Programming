@@ -407,15 +407,21 @@
     async function initPyodide() {
       try {
         const outputEl = document.getElementById('outputContent');
-        outputEl.textContent = 'Loading Python environment...';
+        outputEl.textContent = 'Loading Python environment (may take 30-60s)...';
         outputEl.className = 'output-content';
 
-        pyodide = await loadPyodide();
+        // Fix: Use indexURL for more reliable loading
+        pyodide = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
+        });
+        
         outputEl.textContent = 'Python ready. Click "Run Code" to execute.';
         console.log('Pyodide loaded successfully');
       } catch (error) {
         console.error('Failed to load Pyodide:', error);
-        document.getElementById('outputContent').textContent = 'Python environment could not be loaded. Please refresh the page.';
+        const outputEl = document.getElementById('outputContent');
+        outputEl.textContent = `Python loading error. Please check your internet or refresh. (Error: ${error.message})`;
+        outputEl.className = 'output-content error';
       }
     }
 

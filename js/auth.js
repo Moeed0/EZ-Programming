@@ -28,7 +28,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Helper for timeouts
-async function withTimeout(promise, ms = 5000) {
+async function withTimeout(promise, ms = 10000) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
@@ -83,7 +83,7 @@ export async function getLessons(admin = false) {
       q = query(collection(db, "lessons"), where("isPublished", "==", true), orderBy("orderIndex", "asc"));
     }
 
-    const snapshot = await withTimeout(getDocs(q), 3000);
+    const snapshot = await withTimeout(getDocs(q), 8000);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (err) {
     console.warn('Firestore fetch failed or timed out:', err);
@@ -93,7 +93,7 @@ export async function getLessons(admin = false) {
 
 export async function getLessonById(lessonId) {
   try {
-    const lessonDoc = await withTimeout(getDoc(doc(db, "lessons", lessonId)), 3000);
+    const lessonDoc = await withTimeout(getDoc(doc(db, "lessons", lessonId)), 8000);
     if (!lessonDoc.exists()) return null;
 
     // Get sections and exercises
@@ -136,8 +136,8 @@ export async function updateProgress(lessonId, status) {
 
   const progressData = {
     userId: user.uid,
-    lessonId,
-    status,
+    lessonId: String(lessonId),
+    status: String(status),
     updatedAt: serverTimestamp()
   };
 
