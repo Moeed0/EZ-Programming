@@ -136,14 +136,30 @@ export async function getProgress() {
   const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
   
   try {
-    const q = query(collection(db, "progress"), where("userId", "==", user.uid));
-    const snapshot = await withTimeout(getDocs(q), 5000);
-    const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Direct Fetch Strategy: Faster and no index required
+    const lessonIds = ['lesson-1', 'lesson-2', 'lesson-3', 'lesson-4', 'lesson-5', 'lesson-6', 'lesson-7', 'lesson-8', 'lesson-9', 'lesson-10'];
+    const firestoreData = [];
+
+    // Run all fetches in parallel for speed
+    const fetchPromises = lessonIds.map(async (lid) => {
+      try {
+        const docRef = doc(db, "progress", `${user.uid}_${lid}`);
+        const d = await getDoc(docRef);
+        if (d.exists()) {
+          firestoreData.push({ id: d.id, ...d.data() });
+        }
+      } catch (e) {
+        // Individual fetch failed
+      }
+    });
+
+    await withTimeout(Promise.all(fetchPromises), 5000);
     
-    // Smart merge: Firestore is the source of truth, but don't lose local items not yet synced
+    // Smart merge
     const merged = [...firestoreData];
     localData.forEach(lp => {
-      if (!merged.find(fp => fp.lessonId === lp.lessonId)) {
+      const match = merged.find(fp => fp.lessonId === lp.lessonId);
+      if (!match) {
         merged.push(lp);
       }
     });
@@ -151,7 +167,7 @@ export async function getProgress() {
     localStorage.setItem(localKey, JSON.stringify(merged));
     return merged;
   } catch (err) {
-    console.warn('Firestore progress load failed, using local only:', err);
+    console.warn('Direct progress fetch failed, using local:', err);
     return localData;
   }
 }
