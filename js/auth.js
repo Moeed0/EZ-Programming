@@ -185,7 +185,7 @@ export async function getLessons(admin) {
     if (admin) {
       q = query(collection(db, "lessons"), orderBy("orderIndex", "asc"));
     } else {
-      q = query(collection(db, "lessons"), where("isPublished", "==", true), orderBy("orderIndex", "asc"));
+      q = query(collection(db, "lessons"), where("isPublished", "==", true), where("isHidden", "==", false), orderBy("orderIndex", "asc"));
     }
     var snap = await timeoutFn(function() { return getDocs(q); });
     return snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
@@ -371,8 +371,50 @@ export async function updateLesson(lessonId, data) {
   await updateDoc(doc(db, "lessons", lessonId), { ...data, updatedAt: serverTimestamp() });
 }
 
+/**
+ * Toggle isHidden flag on a lesson.
+ * Pass true to hide, false to un-hide.
+ */
+export async function hideLesson(lessonId, isHidden) {
+  await updateDoc(doc(db, "lessons", lessonId), {
+    isHidden: !!isHidden,
+    updatedAt: serverTimestamp()
+  });
+}
+
 export async function deleteLesson(lessonId) {
+  // 1. Delete the lesson document
   await deleteDoc(doc(db, "lessons", lessonId));
+  // 2. Purge every progress record for this lesson across ALL users
+  await deleteLessonProgress(lessonId);
+}
+
+/**
+ * Remove all progress docs whose lessonId field matches `lessonId`.
+ * Scans the entire `progress` collection once and deletes in batches of 450.
+ */
+export async function deleteLessonProgress(lessonId) {
+  var lessonIdStr = String(lessonId);
+  var snap = await timeoutFn(function() { return getDocs(collection(db, "progress")); });
+  var toDelete = [];
+  snap.forEach(function(docSnap) {
+    var stored = String(docSnap.get('lessonId') || '');
+    if (stored === lessonIdStr) toDelete.push(docSnap.ref);
+  });
+  console.log('[Admin] deleteLessonProgress | deleting', toDelete.length, 'progress docs for lesson:', lessonIdStr);
+  // Delete in batches of 450 (Firestore limit per write batch)
+  var BATCH = 450;
+  for (var i = 0; i < toDelete.length; i += BATCH) {
+    var batchArr = toDelete.slice(i, i + BATCH);
+    var batch = db.batch ? db.batch() : null;
+    if (batch) {
+      batchArr.forEach(function(ref) { batch.delete(ref); });
+      await batch.commit();
+    } else {
+      await Promise.all(batchArr.map(function(ref) { return deleteDoc(ref); }));
+    }
+  }
+  console.log('[Admin] deleteLessonProgress DONE — removed', toDelete.length, 'records');
 }
 
 // ============================================
@@ -391,11 +433,30 @@ export async function apiRequest(endpoint, options) {
   }
   if (endpoint.indexOf('/api/lessons/') === 0) {
     var id = endpoint.split('/api/lessons/')[1];
-    if (method === 'PUT')    { await updateLesson(id, parsedBody); return { message: 'Success' }; }
-    if (method === 'DELETE') { await deleteLesson(id);      return { message: 'Success' }; }
+
+    // ── DELETE /api/lessons/{id}               → removes lesson + all its progress
+    if (method === 'DELETE') { await deleteLesson(id); return { message: 'Success' }; }
+
+    // ── PUT  /api/lessons/{id}                 → updates lesson metadata + isHidden
+    if (method === 'PUT') { await updateLesson(id, parsedBody); return { message: 'Success' }; }
+
+    // ── POST /api/lessons/{id}/hide   (admin)  → sets    isHidden = true
+    // ── POST /api/lessons/{id}/unhide (admin)  → sets    isHidden = false
+    // We normalise the path below so both URLs land here.
+    var _lessonId = id.replace(/\/.*$/, '');
+    if (parsedBody.isHidden === true)  { await hideLesson(_lessonId, true);  return { message: 'Success' }; }
+    if (parsedBody.isHidden === false) { await hideLesson(_lessonId, false); return { message: 'Success' }; }
+
     var ldata = await getLessonById(id);
     if (!ldata) throw new Error('Lesson not found');
     return ldata;
+  }
+
+  // ── DELETE /api/lessons/{id}/progress  → purge all progress for one lesson
+  if (endpoint.indexOf('/api/lessons/') === 0 && endpoint.indexOf('/progress') !== -1 && method === 'DELETE') {
+    var _progId = endpoint.split('/api/lessons/')[1].replace(/\/progress.*$/, '');
+    await deleteLessonProgress(_progId);
+    return { message: 'Success' };
   }
 
   // ── Progress ─────────────────────────────────────────────────────────────

@@ -28,6 +28,7 @@
           <th>Title</th>
           <th>Topic</th>
           <th>Status</th>
+          <th>Visibility</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -111,6 +112,7 @@
     window.editLesson    = editLesson;
     window.deleteLesson  = deleteLesson;
     window.togglePublish = togglePublish;
+    window.toggleHide    = toggleHide;
 
     let lessons = [];
 
@@ -170,8 +172,7 @@
         renderTable();
       } catch (error) {
         console.error('Failed to load lessons:', error);
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-error">Failed to load lessons. Make sure you are logged in.</td></tr>`;
-      }
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Failed to load lessons. Make sure you are logged in.</td></tr>`;      }
     }
 
     /**
@@ -179,7 +180,7 @@
      */
     function renderTable() {
       if (lessons.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="text-center">No lessons found. Create one to get started.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center">No lessons found. Create one to get started.</td></tr>`;
         return;
       }
 
@@ -194,10 +195,18 @@
             </span>
           </td>
           <td>
+            <span class="status-badge ${(!lesson.isHidden) ? 'status-published' : 'status-draft'}" style="${lesson.isHidden ? 'opacity:0.55;' : ''}">
+              ${!lesson.isHidden ? 'Visible' : 'Hidden'}
+            </span>
+          </td>
+          <td>
             <div class="admin-actions">
               <button class="btn btn-sm btn-outline" onclick="editLesson('${lesson.id}')">Edit</button>
               <button class="btn btn-sm ${lesson.isPublished ? 'btn-outline' : 'btn-secondary'}" onclick="togglePublish('${lesson.id}', ${!lesson.isPublished})">
                 ${lesson.isPublished ? 'Unpublish' : 'Publish'}
+              </button>
+              <button class="btn btn-sm ${lesson.isHidden ? 'btn-outline' : 'btn-secondary'}" onclick="toggleHide('${lesson.id}', ${!lesson.isHidden})">
+                ${lesson.isHidden ? 'Unhide' : 'Hide'}
               </button>
               <button class="btn btn-sm btn-danger" onclick="deleteLesson('${lesson.id}')">Delete</button>
             </div>
@@ -266,14 +275,14 @@
     });
 
     /**
-     * Delete a lesson
+     * Delete a lesson and ALL its progress records for every user
      */
     async function deleteLesson(id) {
       if (!confirm('Are you sure you want to delete this lesson? This cannot be undone.')) return;
 
       try {
         await apiRequest(`/api/lessons/${id}`, { method: 'DELETE' });
-        showToast('Lesson deleted', 'success');
+        showToast('Lesson deleted. Student progress for this lesson has also been removed.', 'success');
         await loadAdminLessons();
       } catch (error) {
         showToast(error.message, 'error');
@@ -290,6 +299,24 @@
           body: JSON.stringify({ isPublished })
         });
         showToast(isPublished ? 'Lesson published' : 'Lesson unpublished', 'success');
+        await loadAdminLessons();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    /**
+     * Toggle isHidden flag on a lesson.
+     * true  → lesson disappears from every student dashboard immediately.
+     * false → lesson re-appears in student dashboards as before.
+     */
+    async function toggleHide(id, isHidden) {
+      try {
+        await apiRequest(`/api/lessons/${id}`, {
+          method: 'POST',
+          body: JSON.stringify({ isHidden: !!isHidden })
+        });
+        showToast(isHidden ? 'Lesson hidden — students will not see it' : 'Lesson unhidden — students can see it again', 'success');
         await loadAdminLessons();
       } catch (error) {
         showToast(error.message, 'error');
