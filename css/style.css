@@ -861,6 +861,61 @@ a {
   background-color: var(--color-primary);
 }
 
+/* --- Debug Panel --- */
+.debug-panel {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  width: 400px;
+  max-height: 280px;
+  flex-direction: column;
+  background: #1E293B;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  z-index: 9999;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.debug-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: #0F172A;
+  border-bottom: 1px solid #334155;
+  cursor: pointer;
+  user-select: none;
+  color: #94A3B8;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.debug-panel-header:hover {
+  background: #1E293B;
+}
+
+#debugLog {
+  padding: 6px 10px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: 220px;
+}
+
+.log-entry {
+  padding: 1px 0;
+  border-bottom: 1px solid #1E293B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-error   { color: #FCA5A5; }
+.log-warn    { color: #FDE68A; }
+.log-success { color: #86EFAC; }
+.log-info    { color: #93C5FD; }
+
 /* --- Status Badge --- */
 .status-badge {
   display: inline-block;

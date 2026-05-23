@@ -55,37 +55,67 @@
         <p>Loading lessons...</p>
       </div>
     </div>
+    <p id="loadError" style="display:none; text-align:center; color: var(--color-error); font-size:.8125rem; margin:8px 0;"></p>
+
+    <!-- Debug Panel — fixed bottom-right, always in DOM, toggle with header bar -->
+    <div id="debugPanel" class="debug-panel">
+      <div id="toggleDebugBtn" class="debug-panel-header" title="Click to collapse/expand">
+        <span>Diagnostics</span>
+        <span id="debugToggleIcon">&#9660;</span>
+      </div>
+      <div id="debugLog"></div>
+    </div>
 
     <!-- Footer -->
     <div id="footer"></div>
 
     <script type="module">
-      import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-      import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing, getProgress } from './js/auth.js?v=1.0';
+      import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.1';
+      import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing, getProgress } from './js/auth.js?v=1.1';
 
       renderNavbar('dashboard');
       renderFooter();
 
-      // ── Debug helpers ─────────────────────────────────────────────────────
+      // ── Build inline debug panel (visible by default — no DOM element needed) ────
+      var _dbgPadding = 16;
+      var _dbgVisible = true;
+      var _dbgMaxLines = 60;
+
       function D(msg, type) {
         type = type || 'info';
-        const p = document.getElementById('debugPanel');
-        if (!p) return;
-        const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
-        const cls = type === 'err' ? 'log-error'
-                  : type === 'warn' ? 'log-warn'
-                  : type === 'ok'   ? 'log-success'
-                  : 'log-info';
-        p.innerHTML = '<div class="log-entry ' + cls + '">[' + ts + '] ' + msg + '</div>' + p.innerHTML;
+        var ts  = new Date().toLocaleTimeString('en-GB', { hour12: false });
+        var cls = type === 'err' ? 'log-error'
+                : type === 'warn' ? 'log-warn'
+                : type === 'ok'   ? 'log-success'
+                : 'log-info';
+        var el  = document.getElementById('debugLog');
+        if (el) {
+          el.innerHTML = '<div class="log-entry ' + cls + '">[' + ts + '] ' + msg + '</div>' + el.innerHTML;
+          var lines = el.querySelectorAll('.log-entry');
+          if (lines.length > _dbgMaxLines) { lines[_dbgMaxLines].remove(); }
+          if (el.scrollHeight > 240) el.scrollTop = el.scrollHeight - 240;
+        }
         console.log('[Dash]', msg);
-        if (p.scrollHeight > 400) p.scrollTop = p.scrollHeight - 400;
       }
 
-      var btn = document.getElementById('toggleDebugBtn');
-      if (btn) btn.addEventListener('click', function() {
-        var p = document.getElementById('debugPanel');
-        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+      function toggleDebug() {
+        _dbgVisible = !_dbgVisible;
+        document.getElementById('debugPanel').style.display = _dbgVisible ? 'flex' : 'none';
+        var icon = document.getElementById('debugToggleIcon');
+        if (icon) icon.textContent = _dbgVisible ? '\u25BC' : '\u25B2';
+        D(_dbgVisible ? 'Debug panel SHOWN (toggle)' : 'Debug panel HIDDEN (toggle)');
+      }
+
+      document.getElementById('toggleDebugBtn').addEventListener('click', toggleDebug);
+
+      // ── Catch all unhandled errors ──────────────────────────────────────────
+      window.addEventListener('error', function(e) {
+        D('UNCAUGHT ERROR: ' + e.message + ' @ ' + (e.filename || '') + ':' + (e.lineno || ''), 'err');
       });
+      window.addEventListener('unhandledrejection', function(e) {
+        D('UNHANDLED REJECTION: ' + (e.reason && (e.reason.message || e.reason)), 'err');
+      });
+
 
       // Sample lessons (fallback when Firestore lessons collection is empty)
       var sampleLessons = [
@@ -109,8 +139,9 @@
       async function loadLessons() {
         D('loadLessons() — calling apiRequest(/api/lessons)');
         try {
-          var data = await apiRequest('/api/lessons');
-          var list = data.lessons.length ? data.lessons : sampleLessons;
+          var data  = await apiRequest('/api/lessons');
+          var list  = data.lessons || (Array.isArray(data) ? data : []);
+          list      = list.length ? list : sampleLessons;
           D('loadLessons() — ' + list.length + ' lessons returned');
           return list;
         } catch(err) {
@@ -125,16 +156,25 @@
        * The caller (onAuthChange / refreshProgressOnShow) stores
        * the result into userProgress as an array.
        */
+      // ── Normalise progress array → {lessonId: status} map ──────────────────
+      function normaliseProgress(items) {
+        var map = {};
+        if (Array.isArray(items)) {
+          items.forEach(function(p) {
+            if (p && p.lessonId && p.status) { map[String(p.lessonId)] = String(p.status); }
+          });
+        }
+        return map;
+      }
+
       async function loadProgressFromFirestore() {
         var user = getCurrentUser();
         if (!user) { D('loadProgressFromFirestore — getCurrentUser() returned null', 'warn'); return []; }
         D('loadProgressFromFirestore | uid: ' + user.uid, 'info');
+        var t0 = Date.now();
         try {
           const progress = await getProgress();
-          D('loadProgressFromFirestore — ' + progress.length + ' items returned from getProgress()', 'ok');
-          progress.forEach(function(p) {
-            D('  lesson=' + p.lessonId + ' status=' + p.status + ' userId=' + p.userId, 'ok');
-          });
+          D('loadProgressFromFirestore — ' + progress.length + ' items in ' + (Date.now() - t0) + 'ms', 'ok');
           return progress;
         } catch(err) {
           D('loadProgressFromFirestore FAILED: ' + (err.code||'') + ' ' + (err.message||err), 'err');
@@ -231,21 +271,37 @@
         });
 
         var lessonsAndProgress = await Promise.all([loadLessons(), loadProgressFromFirestore()]);
-        userProgress = lessonsAndProgress[1];
+        userProgress          = normaliseProgress(lessonsAndProgress[1]);
+        D('userProgress map: ' + JSON.stringify(userProgress), 'ok');
         renderLessons(lessonsAndProgress[0]);
       }
 
-      initDashboard();
+      // ── 8-second dashboard init watchdog ────────────────────────────────────
+      var _dashTimer = setTimeout(function() {
+        var u = getCurrentUser();
+        D('WATCHDOG: dashboard init timed out. auth=' + (u ? u.uid : 'null')
+          + ' progress=' + JSON.stringify(userProgress)
+          + ' lessons_rendered='
+          + (document.querySelectorAll('.lesson-card').length || 0), 'err');
+        var errEl = document.getElementById('loadError');
+        if (errEl) {
+          errEl.style.display = 'block';
+          errEl.textContent = 'Dashboard took too long to load. Check console for details, or refresh the page.';
+        }
+      }, 8000);
 
       // ── Refresh on page visibility / back-button / lesson-complete event ─────────
       async function refreshProgressOnShow() {
         var user = getCurrentUser();
         if (!user) return;
         D('refreshProgressOnShow — pageshow / back-button / progress-updated event');
-        userProgress = await loadProgressFromFirestore();
+        userProgress = normaliseProgress(await loadProgressFromFirestore());
         var lessons  = await loadLessons();
         renderLessons(lessons);
       }
+
+      // Kick off dashboard init (must come after all function defs)
+      initDashboard();
 
       window.addEventListener('pageshow',            refreshProgressOnShow);
       window.addEventListener('progress-updated',    refreshProgressOnShow);
