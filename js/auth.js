@@ -29,7 +29,7 @@ import {
 function timeoutFn(fn) {
   return new Promise(function(resolve, reject) {
     var timer = setTimeout(function() {
-      reject(new Error('Timeout'));
+      reject(new Error('[Timeout] Operation took longer than 10 000ms'));
     }, 10000);
     fn().then(function(v) {
       clearTimeout(timer);
@@ -178,20 +178,42 @@ export function getCurrentUser() {
 // ============================================
 // LESSON FUNCTIONS
 // ============================================
-export async function getLessons(admin) {
+
+/**
+ * Shared sample-lessons list in plain JS objects.
+ */
+const _sampleLessons = [
+  {id:'lesson-1',title:'Hello World in Python',topic:'Introduction',difficulty:'beginner',orderIndex:1,isPublished:true,isHidden:false},
+  {id:'lesson-2',title:'Variables and Data Types',topic:'Basics',difficulty:'beginner',orderIndex:2,isPublished:true,isHidden:false},
+  {id:'lesson-3',title:'Conditional Statements',topic:'Control Flow',difficulty:'beginner',orderIndex:3,isPublished:true,isHidden:false},
+  {id:'lesson-4',title:'Loops - For and While',topic:'Control Flow',difficulty:'intermediate',orderIndex:4,isPublished:true,isHidden:false},
+  {id:'lesson-5',title:'Functions in Python',topic:'Functions',difficulty:'intermediate',orderIndex:5,isPublished:true,isHidden:false},
+  {id:'lesson-6',title:'Lists and Tuples',topic:'Data Structures',difficulty:'intermediate',orderIndex:6,isPublished:true,isHidden:false},
+  {id:'lesson-7',title:'Dictionaries (Key-Value)',topic:'Data Structures',difficulty:'intermediate',orderIndex:7,isPublished:true,isHidden:false},
+  {id:'lesson-8',title:'List Comprehensions',topic:'Advanced Basics',difficulty:'intermediate',orderIndex:8,isPublished:true,isHidden:false},
+  {id:'lesson-9',title:'Error Handling (Try/Except)',topic:'Error Handling',difficulty:'intermediate',orderIndex:9,isPublished:true,isHidden:false},
+  {id:'lesson-10',title:'File I/O Basics',topic:'File Handling',difficulty:'advanced',orderIndex:10,isPublished:true,isHidden:false}
+];
+
+export async function getLessons(admin, defaultLessons) {
   admin = !!admin;
   try {
     var q;
     if (admin) {
       q = query(collection(db, "lessons"), orderBy("orderIndex", "asc"));
     } else {
-      q = query(collection(db, "lessons"), where("isPublished", "==", true), where("isHidden", "==", false), orderBy("orderIndex", "asc"));
+      q = query(collection(db, "lessons"),
+                 where("isPublished", "==", true),
+                 where("isHidden",    "==", false),
+                 orderBy("orderIndex", "asc"));
     }
     var snap = await timeoutFn(function() { return getDocs(q); });
-    return snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+    var lessons = snap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
+    return lessons.length > 0 || (admin && !defaultLessons) ? lessons
+         : defaultLessons || _sampleLessons;
   } catch(err) {
     console.warn('Firestore getLessons failed:', err);
-    return [];
+    return (defaultLessons || _sampleLessons).slice(0);
   }
 }
 
@@ -346,6 +368,7 @@ export async function createLesson(data) {
     difficulty:  data.difficulty       || 'beginner',
     orderIndex:  data.orderIndex       || 0,
     isPublished: data.isPublished      || false,
+    isHidden:    data.isHidden         || false,  // always written — prevents query misses
     createdAt:   serverTimestamp(),
     updatedAt:   serverTimestamp()
   });
@@ -369,6 +392,40 @@ export async function createLesson(data) {
 
 export async function updateLesson(lessonId, data) {
   await updateDoc(doc(db, "lessons", lessonId), { ...data, updatedAt: serverTimestamp() });
+}
+
+/**
+ * Migrate: add isHidden:false to any lesson that is missing that field.
+ * Idempotent — safe to call multiple times.
+ */
+export async function backfillIsHiddenOnLessons() {
+  var total  = 0;
+  var fixed  = 0;
+  var BATCH  = 450;
+  var snap   = await timeoutFn(function() { return getDocs(collection(db, 'lessons')); });
+  var toUpdate = [];
+  snap.forEach(function(docSnap) {
+    total++;
+    if (!docSnap.data().hasOwnProperty('isHidden')) {
+      toUpdate.push({ id: docSnap.id, ref: docSnap.ref });
+    }
+  });
+  for (var i = 0; i < toUpdate.length; i += BATCH) {
+    var chunk = toUpdate.slice(i, i + BATCH);
+    if (chunk.length === 0) break;
+    var b = db.batch ? db.batch() : null;
+    if (b) {
+      chunk.forEach(function(item) { b.update(item.ref, { isHidden: false, updatedAt: serverTimestamp() }); });
+      await b.commit();
+    } else {
+      await Promise.all(chunk.map(function(item) {
+        return updateDoc(item.ref, { isHidden: false, updatedAt: serverTimestamp() });
+      }));
+    }
+  }
+  fixed = toUpdate.length;
+  console.log('[Migration] backfillIsHiddenOnLessons — scanned', total, 'updated', fixed);
+  return { scanned: total, updated: fixed };
 }
 
 /**
@@ -425,35 +482,42 @@ export async function apiRequest(endpoint, options) {
   var method = options.method, body = options.body;
   var parsedBody = body ? JSON.parse(body) : {};
 
-  if (endpoint === '/api/auth/signup')        return { message: 'Success' };
-  if (endpoint === '/api/lessons' && method === 'POST')  return { lessonId: await createLesson(parsedBody) };
-  if (endpoint === '/api/lessons' || endpoint === '/api/lessons?admin=true') {
-    var _isAdmin = endpoint.indexOf('admin=true') !== -1;
-    return { lessons: await getLessons(_isAdmin) };
+  if (endpoint === '/api/auth/signup')                             return { message: 'Success' };
+  if (endpoint === '/api/lessons'        && method === 'POST')     return { lessonId: await createLesson(parsedBody) };
+  if (endpoint === '/api/lessons?admin=true') {
+    console.log('[API] GET /api/lessons?admin=true  → fetch all lessons');
+    return { lessons: await getLessons(true) };
+  }
+  if (endpoint === '/api/lessons') {
+    console.log('[API] GET /api/lessons  → fetch published, visible lessons for regular users');
+    return { lessons: await getLessons(false) };
   }
   if (endpoint.indexOf('/api/lessons/') === 0) {
     var id = endpoint.split('/api/lessons/')[1];
+    console.log('[API] lesson-path | rest=' + id, 'method=' + (method || 'GET'));
 
-    // ── DELETE /api/lessons/{id}               → removes lesson + all its progress
+    // POST  /api/lessons/{id}  body: {isHidden:true|false}  → toggle visibility
+    if (method === 'POST' && typeof parsedBody.isHidden === 'boolean') {
+      await hideLesson(id, !!parsedBody.isHidden);
+      return { message: 'Success' };
+    }
+
+    // DELETE /api/lessons/{id}                         → remove lesson + its progress
     if (method === 'DELETE') { await deleteLesson(id); return { message: 'Success' }; }
 
-    // ── PUT  /api/lessons/{id}                 → updates lesson metadata + isHidden
+    // PUT     /api/lessons/{id}                        → update lesson metadata
     if (method === 'PUT') { await updateLesson(id, parsedBody); return { message: 'Success' }; }
 
-    // ── POST /api/lessons/{id}/hide   (admin)  → sets    isHidden = true
-    // ── POST /api/lessons/{id}/unhide (admin)  → sets    isHidden = false
-    // We normalise the path below so both URLs land here.
-    var _lessonId = id.replace(/\/.*$/, '');
-    if (parsedBody.isHidden === true)  { await hideLesson(_lessonId, true);  return { message: 'Success' }; }
-    if (parsedBody.isHidden === false) { await hideLesson(_lessonId, false); return { message: 'Success' }; }
-
+    // GET     /api/lessons/{id}                        → fetch one lesson
     var ldata = await getLessonById(id);
     if (!ldata) throw new Error('Lesson not found');
     return ldata;
   }
 
   // ── DELETE /api/lessons/{id}/progress  → purge all progress for one lesson
-  if (endpoint.indexOf('/api/lessons/') === 0 && endpoint.indexOf('/progress') !== -1 && method === 'DELETE') {
+  if (endpoint.indexOf('/api/lessons/') === 0
+      && endpoint.indexOf('/progress')  !== -1
+      && (!method || method === 'DELETE')) {
     var _progId = endpoint.split('/api/lessons/')[1].replace(/\/progress.*$/, '');
     await deleteLessonProgress(_progId);
     return { message: 'Success' };

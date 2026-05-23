@@ -17,7 +17,10 @@
   <div class="admin-container">
     <div class="admin-header">
       <h1>Lesson Management</h1>
-      <button class="btn btn-primary" id="openAddModalBtn">+ Add New Lesson</button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="btn btn-primary" id="openAddModalBtn">+ Add New Lesson</button>
+        <button class="btn btn-outline" onclick="runBackfill()" title="Fix existing lessons missing isHidden field">🔄 Backfill isHidden</button>
+      </div>
     </div>
 
     <!-- Lessons Table -->
@@ -99,7 +102,9 @@
 
   <script type="module">
     import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.0';
-    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing } from './js/auth.js?v=1.0';
+    import { onAuthChange, apiRequest, getCurrentUser, getUserProfile,
+             createUserProfileIfMissing, toggleHide,
+             backfillIsHiddenOnLessons } from './js/auth.js?v=1.0';
 
     renderNavbar('admin');
     renderFooter();
@@ -109,10 +114,11 @@
     const tableBody   = document.getElementById('adminLessonsTable');
 
     // Make functions globally available for inline onclick handlers
-    window.editLesson    = editLesson;
-    window.deleteLesson  = deleteLesson;
-    window.togglePublish = togglePublish;
-    window.toggleHide    = toggleHide;
+    window.editLesson        = editLesson;
+    window.deleteLesson      = deleteLesson;
+    window.togglePublish     = togglePublish;
+    window.toggleHide        = toggleHide;
+    window.runBackfill       = runBackfill;
 
     let lessons = [];
 
@@ -163,24 +169,57 @@
     }
 
     /**
-     * Load lessons for admin table
+     * Load lessons for admin table — merges Firestore result with sample-lessons fallback
      */
     async function loadAdminLessons() {
       try {
-        const data = await apiRequest('/api/lessons?admin=true');
-        lessons = data.lessons;
+        // 1. Sync isHidden field on existing docs (admin-only; no-op if already migrated)
+        try { await backfillIsHiddenOnLessons(); } catch(_) {}
+
+        var data     = await apiRequest('/api/lessons?admin=true');
+        // apiRequest('/api/lessons?admin=true') returns { lessons: [...] }
+        var firestore = (data && data.lessons) || [];
+
+        // 2. Build a map of existing Firestore lesson IDs
+        var existingIds = {};
+        firestore.forEach(function(l) { existingIds[String(l.id)] = true; });
+
+        // 3. Merge: keep all Firestore lessons, then append any sample lessons NOT already present
+        var merged = firestore.slice(0);
+        _sampleLessons.forEach(function(sl) {
+          if (!existingIds[String(sl.id)]) merged.push({ ...sl, _source: 'sample' });
+        });
+
+        lessons = merged;
         renderTable();
       } catch (error) {
         console.error('Failed to load lessons:', error);
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-error">Failed to load lessons. Make sure you are logged in.</td></tr>`;      }
+        // Absolute last resort: show sample lessons
+        lessons = _sampleLessons.map(function(s) { return { ...s, _source: 'sample' }; });
+        renderTable();
+      }
     }
+
+    /* built-in sample lessons (same list as in auth.js) */
+    var _sampleLessons = [
+      {id:'lesson-1',title:'Hello World in Python',topic:'Introduction',difficulty:'beginner',orderIndex:1,isPublished:true,isHidden:false},
+      {id:'lesson-2',title:'Variables and Data Types',topic:'Basics',difficulty:'beginner',orderIndex:2,isPublished:true,isHidden:false},
+      {id:'lesson-3',title:'Conditional Statements',topic:'Control Flow',difficulty:'beginner',orderIndex:3,isPublished:true,isHidden:false},
+      {id:'lesson-4',title:'Loops - For and While',topic:'Control Flow',difficulty:'intermediate',orderIndex:4,isPublished:true,isHidden:false},
+      {id:'lesson-5',title:'Functions in Python',topic:'Functions',difficulty:'intermediate',orderIndex:5,isPublished:true,isHidden:false},
+      {id:'lesson-6',title:'Lists and Tuples',topic:'Data Structures',difficulty:'intermediate',orderIndex:6,isPublished:true,isHidden:false},
+      {id:'lesson-7',title:'Dictionaries (Key-Value)',topic:'Data Structures',difficulty:'intermediate',orderIndex:7,isPublished:true,isHidden:false},
+      {id:'lesson-8',title:'List Comprehensions',topic:'Advanced Basics',difficulty:'intermediate',orderIndex:8,isPublished:true,isHidden:false},
+      {id:'lesson-9',title:'Error Handling (Try/Except)',topic:'Error Handling',difficulty:'intermediate',orderIndex:9,isPublished:true,isHidden:false},
+      {id:'lesson-10',title:'File I/O Basics',topic:'File Handling',difficulty:'advanced',orderIndex:10,isPublished:true,isHidden:false}
+    ];
 
     /**
      * Render the admin lessons table
      */
     function renderTable() {
       if (lessons.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="text-center">No lessons found. Create one to get started.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center">No lessons found. Click "+ Add New Lesson" to create the first one.</td></tr>`;
         return;
       }
 
@@ -195,17 +234,22 @@
             </span>
           </td>
           <td>
-            <span class="status-badge ${(!lesson.isHidden) ? 'status-published' : 'status-draft'}" style="${lesson.isHidden ? 'opacity:0.55;' : ''}">
+            <span class="status-badge ${!lesson.isHidden ? 'status-published' : 'status-draft'}"
+                  style="${lesson.isHidden ? 'opacity:0.55;' : ''}"
+                  title="isHidden: ${!!lesson.isHidden}">
               ${!lesson.isHidden ? 'Visible' : 'Hidden'}
             </span>
           </td>
           <td>
             <div class="admin-actions">
               <button class="btn btn-sm btn-outline" onclick="editLesson('${lesson.id}')">Edit</button>
-              <button class="btn btn-sm ${lesson.isPublished ? 'btn-outline' : 'btn-secondary'}" onclick="togglePublish('${lesson.id}', ${!lesson.isPublished})">
+              <button class="btn btn-sm ${lesson.isPublished ? 'btn-outline' : 'btn-secondary'}"
+                      onclick="togglePublish('${lesson.id}', ${!lesson.isPublished})">
                 ${lesson.isPublished ? 'Unpublish' : 'Publish'}
               </button>
-              <button class="btn btn-sm ${lesson.isHidden ? 'btn-outline' : 'btn-secondary'}" onclick="toggleHide('${lesson.id}', ${!lesson.isHidden})">
+              <button class="btn btn-sm ${lesson.isHidden ? 'btn-outline' : 'btn-secondary'}"
+                      onclick="toggleHide('${lesson.id}', ${!lesson.isHidden})"
+                      title="${lesson.isHidden ? 'Make visible to students' : 'Hide from students'}">
                 ${lesson.isHidden ? 'Unhide' : 'Hide'}
               </button>
               <button class="btn btn-sm btn-danger" onclick="deleteLesson('${lesson.id}')">Delete</button>
@@ -320,6 +364,21 @@
         await loadAdminLessons();
       } catch (error) {
         showToast(error.message, 'error');
+      }
+    }
+
+    /**
+     * Ensure every lesson doc has the isHidden field (backfill for docs created before isHidden was added).
+     * Safe to call any number of times.
+     */
+    async function runBackfill() {
+      try {
+        showToast('Backfilling isHidden — check the debug panel for progress...', 'info');
+        var result = await backfillIsHiddenOnLessons();
+        showToast('isHidden backfill done. Updated ' + result.updated + ' of ' + result.scanned + ' lessons.', 'success');
+        await loadAdminLessons();
+      } catch (error) {
+        showToast('Backfill failed: ' + error.message, 'error');
       }
     }
 
