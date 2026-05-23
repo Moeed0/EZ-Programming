@@ -81,7 +81,8 @@
         if (p.scrollHeight > 400) p.scrollTop = p.scrollHeight - 400;
       }
 
-      document.getElementById('toggleDebugBtn').addEventListener('click', function() {
+      var btn = document.getElementById('toggleDebugBtn');
+      if (btn) btn.addEventListener('click', function() {
         var p = document.getElementById('debugPanel');
         p.style.display = p.style.display === 'none' ? 'block' : 'none';
       });
