@@ -2,51 +2,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Users ────────────────────────────────────────────────────────────────
-
+    // =========================
+    // USERS COLLECTION
+    // =========================
     match /users/{userId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if request.auth != null
-                            && request.auth.uid == userId;
+      // User can read/write ONLY their own profile
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
     }
 
-    // ── Lessons ──────────────────────────────────────────────────────────────
-
-    match /lessons/{lessonId} {
-      allow read, list:   if true;
-      allow create, update, delete: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-
-      match /sections/{sectionId} {
-        allow read, list:   if true;
-        allow create, update, delete: if request.auth != null
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      }
-
-      match /exercises/{exerciseId} {
-        allow read, list:   if true;
-        allow create, update, delete: if request.auth != null
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      }
-    }
-
-    // ── Progress  (flat collection, composite doc IDs: uid_lessonId) ─────────
-
+    // =========================
+    // PROGRESS COLLECTION
+    // =========================
     match /progress/{docId} {
-      allow list, get:   if request.auth != null
-                         && request.auth.uid == resource.data.userId;
-      allow create:      if request.auth != null
-                         && request.auth.uid == resource.data.userId;
-      allow update:      if request.auth != null
-                         && request.auth.uid == resource.data.userId
-                         && (request.resource.data.userId == resource.data.userId
-                             || request.resource.data.userId == null);
-      allow delete:      if request.auth != null
-                         && request.auth.uid == resource.data.userId;
+      // Authenticated user can read their own progress
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      // User can create/update ONLY their own progress
+      allow create, update: if request.auth != null
+        && request.resource.data.userId == request.auth.uid;
+
+      // Prevent deletes via Firestore rules (optional safety net)
+      allow delete: if false;
     }
 
-    // ── Catch-all — deny everything not explicitly allowed ───────────────────
+    // =========================
+    // LESSONS COLLECTION
+    // =========================
+    // Single flat document per lesson — no nested subcollections
+    match /lessons/{lessonId} {
 
+      // Everyone can view published lessons
+      allow read: if true;
+
+      // ONLY admins can create/update/delete lessons
+      allow write: if request.auth != null
+        && get(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        ).data.role == "admin";
+    }
+
+    // =========================
+    // CATCH-ALL — deny everything else
+    // =========================
     match /{document=**} {
       allow read, write: if false;
     }

@@ -222,19 +222,14 @@ export async function getLessonById(lessonId) {
     var docSnap = await timeoutFn(function() { return getDoc(doc(db, "lessons", lessonId)); });
     if (!docSnap.exists()) return null;
 
-    var sectionsSnap   = await timeoutFn(function() { return getDocs(query(collection(db, "lessons", lessonId, "sections"), orderBy("order", "asc"))); });
-    var exercisesSnap  = await timeoutFn(function() { return getDocs(collection(db, "lessons", lessonId, "exercises")); });
-
-    var sections  = sectionsSnap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
-    var exercises = exercisesSnap.docs.map(function(d) { return { id: d.id, ...d.data() }; });
-
+    var data = docSnap.data();
     return {
-      lesson:  { id: docSnap.id, ...docSnap.data() },
-      sections: sections,
-      exercises: exercises
+      lesson:    { id: docSnap.id, ...data },
+      sections:  Array.isArray(data.sections)  ? data.sections  : [],
+      exercises: Array.isArray(data.exercises) ? data.exercises : []
     };
   } catch(err) {
-    console.warn('Firestore getLessonById failed:', err);
+    console.warn('[Lesson] getLessonById failed:', err);
     return null;
   }
 }
@@ -362,32 +357,22 @@ export async function updateProgress(lessonId, status) {
 // ADMIN FUNCTIONS
 // ============================================
 export async function createLesson(data) {
-  var lessonRef = await addDoc(collection(db, "lessons"), {
-    title:       data.title,
-    topic:       data.topic,
-    difficulty:  data.difficulty       || 'beginner',
-    orderIndex:  data.orderIndex       || 0,
-    isPublished: data.isPublished      || false,
-    isHidden:    data.isHidden         || false,  // always written — prevents query misses
-    createdAt:   serverTimestamp(),
-    updatedAt:   serverTimestamp()
+  var docRef = await addDoc(collection(db, "lessons"), {
+    title:        data.title,
+    topic:        data.topic,
+    difficulty:   data.difficulty       || 'beginner',
+    orderIndex:   data.orderIndex       || 0,
+    isPublished:  data.isPublished      || false,
+    isHidden:     data.isHidden         || false,
+    content:      data.content          || '',
+    starterCode:  data.starterCode      || '',
+    hint:         data.hint             || '',
+    sections:     Array.isArray(data.sections)  ? data.sections  : [],
+    exercises:    Array.isArray(data.exercises) ? data.exercises : [],
+    createdAt:    serverTimestamp(),
+    updatedAt:    serverTimestamp()
   });
-  if (data.content) {
-    await addDoc(collection(db, "lessons", lessonRef.id, "sections"), {
-      heading: data.title,
-      content: data.content,
-      order:   0
-    });
-  }
-  if (data.starterCode) {
-    await addDoc(collection(db, "lessons", lessonRef.id, "exercises"), {
-      prompt:        'Practice: ' + data.title,
-      starterCode:   data.starterCode || '',
-      hint:          data.hint || 'Try reading the lesson content for help.',
-      expectedOutput: ''
-    });
-  }
-  return lessonRef.id;
+  return docRef.id;
 }
 
 export async function updateLesson(lessonId, data) {
@@ -494,7 +479,6 @@ export async function apiRequest(endpoint, options) {
   }
   if (endpoint.indexOf('/api/lessons/') === 0) {
     var id = endpoint.split('/api/lessons/')[1];
-    console.log('[API] lesson-path | rest=' + id, 'method=' + (method || 'GET'));
 
     // POST  /api/lessons/{id}  body: {isHidden:true|false}  → toggle visibility
     if (method === 'POST' && typeof parsedBody.isHidden === 'boolean') {
@@ -506,21 +490,12 @@ export async function apiRequest(endpoint, options) {
     if (method === 'DELETE') { await deleteLesson(id); return { message: 'Success' }; }
 
     // PUT     /api/lessons/{id}                        → update lesson metadata
-    if (method === 'PUT') { await updateLesson(id, parsedBody); return { message: 'Success' }; }
+    if (method === 'PUT')    { await updateLesson(id, parsedBody); return { message: 'Success' }; }
 
     // GET     /api/lessons/{id}                        → fetch one lesson
     var ldata = await getLessonById(id);
     if (!ldata) throw new Error('Lesson not found');
     return ldata;
-  }
-
-  // ── DELETE /api/lessons/{id}/progress  → purge all progress for one lesson
-  if (endpoint.indexOf('/api/lessons/') === 0
-      && endpoint.indexOf('/progress')  !== -1
-      && (!method || method === 'DELETE')) {
-    var _progId = endpoint.split('/api/lessons/')[1].replace(/\/progress.*$/, '');
-    await deleteLessonProgress(_progId);
-    return { message: 'Success' };
   }
 
   // ── Progress ─────────────────────────────────────────────────────────────
