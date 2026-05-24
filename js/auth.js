@@ -1,5 +1,6 @@
 // ============================================
-// Logic Module - Direct Firebase Firestore Access
+// auth.js - COMPLETE FIXED VERSION
+// Direct Firebase Firestore Access
 // ============================================
 
 import { auth, db } from './firebase-config.js';
@@ -28,37 +29,68 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ============================================
-// AUTH
+// AUTH FUNCTIONS
 // ============================================
 
 export async function signupUser(name, email, password) {
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
+  try {
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
 
-  await setDoc(doc(db, "users", cred.user.uid), {
-    name,
-    email,
-    role: "student",
-    createdAt: serverTimestamp()
-  });
+    await setDoc(doc(db, "users", cred.user.uid), {
+      name: name || "Learner",
+      email,
+      role: "student",
+      createdAt: serverTimestamp()
+    });
 
-  return cred.user;
+    return cred.user;
+
+  } catch (error) {
+    console.error("Signup Error:", error);
+    throw error;
+  }
 }
 
 export async function loginUser(email, password) {
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  return cred.user;
+  try {
+    const cred = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+    return cred.user;
+
+  } catch (error) {
+    console.error("Login Error:", error);
+    throw error;
+  }
 }
 
 export async function logoutUser() {
-  await signOut(auth);
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("Logout Error:", error);
+    throw error;
+  }
 }
 
 export async function resetPassword(email) {
-  await sendPasswordResetEmail(auth, email);
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    throw error;
+  }
 }
 
 export function onAuthChange(callback) {
-  onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(auth, callback);
 }
 
 export function getCurrentUser() {
@@ -70,29 +102,51 @@ export function getCurrentUser() {
 // ============================================
 
 export async function getUserProfile(uid) {
-  const snap = await getDoc(doc(db, "users", uid));
-  return snap.exists() ? snap.data() : null;
+  try {
+    if (!uid) return null;
+
+    const snap = await getDoc(doc(db, "users", uid));
+
+    if (snap.exists()) {
+      return snap.data();
+    }
+
+    return null;
+
+  } catch (error) {
+    console.error("Get User Profile Error:", error);
+    return null;
+  }
 }
 
 export async function createUserProfileIfMissing(uid) {
-  const snap = await getDoc(doc(db, "users", uid));
+  try {
+    if (!uid) return null;
 
-  if (snap.exists()) {
-    return snap.data();
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (snap.exists()) {
+      return snap.data();
+    }
+
+    const user = auth.currentUser;
+
+    const profileData = {
+      name: user?.email?.split("@")[0] || "Learner",
+      email: user?.email || "",
+      role: "student",
+      createdAt: serverTimestamp()
+    };
+
+    await setDoc(userRef, profileData);
+
+    return profileData;
+
+  } catch (error) {
+    console.error("Create User Profile Error:", error);
+    throw error;
   }
-
-  const user = auth.currentUser;
-
-  await setDoc(doc(db, "users", uid), {
-    name: user?.email?.split('@')[0] || "Learner",
-    email: user?.email || "",
-    role: "student",
-    createdAt: serverTimestamp()
-  });
-
-  return {
-    role: "student"
-  };
 }
 
 // ============================================
@@ -100,47 +154,65 @@ export async function createUserProfileIfMissing(uid) {
 // ============================================
 
 export async function getLessons(admin = false) {
+  try {
 
-  let q;
+    let q;
 
-  if (admin) {
-    q = query(
-      collection(db, "lessons"),
-      orderBy("orderIndex", "asc")
-    );
-  } else {
-    q = query(
-      collection(db, "lessons"),
-      where("isPublished", "==", true),
-      where("isHidden", "==", false),
-      orderBy("orderIndex", "asc")
-    );
+    if (admin) {
+      q = query(
+        collection(db, "lessons"),
+        orderBy("orderIndex", "asc")
+      );
+    } else {
+      q = query(
+        collection(db, "lessons"),
+        where("isPublished", "==", true),
+        where("isHidden", "==", false),
+        orderBy("orderIndex", "asc")
+      );
+    }
+
+    const snap = await getDocs(q);
+
+    return snap.docs.map(docSnap => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+
+  } catch (error) {
+    console.error("Get Lessons Error:", error);
+    return [];
   }
-
-  const snap = await getDocs(q);
-
-  return snap.docs.map(docSnap => ({
-    id: docSnap.id,
-    ...docSnap.data()
-  }));
 }
 
 export async function getLessonById(lessonId) {
+  try {
 
-  const snap = await getDoc(doc(db, "lessons", lessonId));
+    if (!lessonId) {
+      return null;
+    }
 
-  if (!snap.exists()) {
+    const snap = await getDoc(
+      doc(db, "lessons", lessonId)
+    );
+
+    if (!snap.exists()) {
+      return null;
+    }
+
+    const data = snap.data();
+
+    return {
+      lesson: {
+        id: snap.id,
+        ...data
+      }
+    };
+
+  } catch (error) {
+    console.error("Get Lesson Error:", error);
     return null;
   }
-
-  const data = snap.data();
-
-  return {
-    lesson: {
-      id: snap.id,
-      ...data
-    }
-  };
 }
 
 // ============================================
@@ -148,30 +220,36 @@ export async function getLessonById(lessonId) {
 // ============================================
 
 export async function createLesson(data) {
+  try {
 
-  const lessonData = {
-    title: data.title || "",
-    topic: data.topic || "",
-    difficulty: data.difficulty || "beginner",
-    orderIndex: Number(data.orderIndex || 0),
+    const lessonData = {
+      title: data.title || "",
+      topic: data.topic || "",
+      difficulty: data.difficulty || "beginner",
+      orderIndex: Number(data.orderIndex || 0),
 
-    isPublished: !!data.isPublished,
-    isHidden: !!data.isHidden,
+      isPublished: !!data.isPublished,
+      isHidden: !!data.isHidden,
 
-    content: data.content || "",
-    starterCode: data.starterCode || "",
-    hint: data.hint || "",
+      content: data.content || "",
+      starterCode: data.starterCode || "",
+      hint: data.hint || "",
 
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  };
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
 
-  const docRef = await addDoc(
-    collection(db, "lessons"),
-    lessonData
-  );
+    const docRef = await addDoc(
+      collection(db, "lessons"),
+      lessonData
+    );
 
-  return docRef.id;
+    return docRef.id;
+
+  } catch (error) {
+    console.error("Create Lesson Error:", error);
+    throw error;
+  }
 }
 
 // ============================================
@@ -179,23 +257,41 @@ export async function createLesson(data) {
 // ============================================
 
 export async function updateLesson(lessonId, data) {
+  try {
 
-  await updateDoc(doc(db, "lessons", lessonId), {
-    ...data,
-    updatedAt: serverTimestamp()
-  });
+    await updateDoc(
+      doc(db, "lessons", lessonId),
+      {
+        ...data,
+        updatedAt: serverTimestamp()
+      }
+    );
+
+  } catch (error) {
+    console.error("Update Lesson Error:", error);
+    throw error;
+  }
 }
 
 // ============================================
-// HIDE LESSON
+// HIDE / UNHIDE LESSON
 // ============================================
 
 export async function hideLesson(lessonId, isHidden) {
+  try {
 
-  await updateDoc(doc(db, "lessons", lessonId), {
-    isHidden: !!isHidden,
-    updatedAt: serverTimestamp()
-  });
+    await updateDoc(
+      doc(db, "lessons", lessonId),
+      {
+        isHidden: !!isHidden,
+        updatedAt: serverTimestamp()
+      }
+    );
+
+  } catch (error) {
+    console.error("Hide Lesson Error:", error);
+    throw error;
+  }
 }
 
 // ============================================
@@ -203,8 +299,16 @@ export async function hideLesson(lessonId, isHidden) {
 // ============================================
 
 export async function deleteLesson(lessonId) {
+  try {
 
-  await deleteDoc(doc(db, "lessons", lessonId));
+    await deleteDoc(
+      doc(db, "lessons", lessonId)
+    );
+
+  } catch (error) {
+    console.error("Delete Lesson Error:", error);
+    throw error;
+  }
 }
 
 // ============================================
@@ -212,82 +316,113 @@ export async function deleteLesson(lessonId) {
 // ============================================
 
 export async function getProgress() {
+  try {
 
-  const user = getCurrentUser();
+    const user = getCurrentUser();
 
-  if (!user) {
+    if (!user) {
+      return [];
+    }
+
+    // FIXED: Use Firestore query instead of loading ALL progress
+    const q = query(
+      collection(db, "progress"),
+      where("userId", "==", user.uid)
+    );
+
+    const snap = await getDocs(q);
+
+    return snap.docs.map(docSnap => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+
+  } catch (error) {
+    console.error("Get Progress Error:", error);
     return [];
   }
-
-  const snap = await getDocs(collection(db, "progress"));
-
-  const results = [];
-
-  snap.forEach(docSnap => {
-
-    const data = docSnap.data();
-
-    if (data.userId === user.uid) {
-      results.push({
-        id: docSnap.id,
-        ...data
-      });
-    }
-  });
-
-  return results;
 }
 
 export async function updateProgress(lessonId, status) {
+  try {
 
-  const user = getCurrentUser();
+    const user = getCurrentUser();
 
-  if (!user) {
-    return;
+    if (!user) {
+      throw new Error("User not logged in");
+    }
+
+    if (!lessonId) {
+      throw new Error("lessonId is required");
+    }
+
+    const progressId = `${user.uid}_${lessonId}`;
+
+    await setDoc(
+      doc(db, "progress", progressId),
+      {
+        userId: user.uid,
+        lessonId,
+        status,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    // Trigger sync event for dashboard refresh
+    try {
+      localStorage.setItem(
+        'progress_updated',
+        Date.now().toString()
+      );
+    } catch (e) {
+      console.warn("LocalStorage sync failed");
+    }
+
+    return true;
+
+  } catch (error) {
+    console.error("Update Progress Error:", error);
+    throw error;
   }
-
-  const progressId = `${user.uid}_${lessonId}`;
-
-  await setDoc(
-    doc(db, "progress", progressId),
-    {
-      userId: user.uid,
-      lessonId,
-      status,
-      updatedAt: serverTimestamp()
-    },
-    { merge: true }
-  );
 }
 
 // ============================================
-// BACKFILL
+// BACKFILL isHidden FIELD
 // ============================================
 
 export async function backfillIsHiddenOnLessons() {
+  try {
 
-  const snap = await getDocs(collection(db, "lessons"));
+    const snap = await getDocs(
+      collection(db, "lessons")
+    );
 
-  let updated = 0;
+    let updated = 0;
 
-  for (const lessonDoc of snap.docs) {
+    for (const lessonDoc of snap.docs) {
 
-    const data = lessonDoc.data();
+      const data = lessonDoc.data();
 
-    if (data.isHidden === undefined) {
+      if (data.isHidden === undefined) {
 
-      await updateDoc(lessonDoc.ref, {
-        isHidden: false
-      });
+        await updateDoc(lessonDoc.ref, {
+          isHidden: false
+        });
 
-      updated++;
+        updated++;
+      }
     }
-  }
 
-  return {
-    scanned: snap.size,
-    updated
-  };
+    return {
+      scanned: snap.size,
+      updated
+    };
+
+  } catch (error) {
+    console.error("Backfill Error:", error);
+    throw error;
+  }
 }
 
 // ============================================
@@ -296,103 +431,145 @@ export async function backfillIsHiddenOnLessons() {
 
 export async function apiRequest(endpoint, options = {}) {
 
-  const method = options.method || "GET";
+  try {
 
-  const body = options.body
-    ? JSON.parse(options.body)
-    : {};
+    const method = options.method || "GET";
 
-  // ========================================
-  // LESSONS
-  // ========================================
+    let body = {};
 
-  if (endpoint === '/api/lessons' && method === 'GET') {
-
-    return {
-      lessons: await getLessons(false)
-    };
-  }
-
-  if (endpoint === '/api/lessons?admin=true') {
-
-    return {
-      lessons: await getLessons(true)
-    };
-  }
-
-  if (endpoint === '/api/lessons' && method === 'POST') {
-
-    const lessonId = await createLesson(body);
-
-    return {
-      lessonId
-    };
-  }
-
-  // ========================================
-  // LESSON BY ID
-  // ========================================
-
-  if (endpoint.startsWith('/api/lessons/')) {
-
-    const lessonId = endpoint.split('/api/lessons/')[1];
-
-    // GET
-    if (method === 'GET') {
-
-      return await getLessonById(lessonId);
+    // Safe JSON parsing
+    if (options.body) {
+      try {
+        body = JSON.parse(options.body);
+      } catch (e) {
+        console.warn("Invalid JSON body");
+      }
     }
 
-    // PUT
-    if (method === 'PUT') {
+    // ========================================
+    // LESSONS
+    // ========================================
 
-      await updateLesson(lessonId, body);
+    if (endpoint === '/api/lessons' && method === 'GET') {
+
+      return {
+        lessons: await getLessons(false)
+      };
+    }
+
+    if (endpoint === '/api/lessons?admin=true') {
+
+      return {
+        lessons: await getLessons(true)
+      };
+    }
+
+    if (endpoint === '/api/lessons' && method === 'POST') {
+
+      const lessonId = await createLesson(body);
+
+      return {
+        success: true,
+        lessonId
+      };
+    }
+
+    // ========================================
+    // LESSON BY ID
+    // ========================================
+
+    if (endpoint.startsWith('/api/lessons/')) {
+
+      const lessonId = endpoint.replace('/api/lessons/', '');
+
+      // GET LESSON
+      if (method === 'GET') {
+
+        const lesson = await getLessonById(lessonId);
+
+        if (!lesson) {
+          throw new Error("Lesson not found");
+        }
+
+        return lesson;
+      }
+
+      // UPDATE LESSON
+      if (method === 'PUT') {
+
+        await updateLesson(lessonId, body);
+
+        return {
+          success: true
+        };
+      }
+
+      // DELETE LESSON
+      if (method === 'DELETE') {
+
+        await deleteLesson(lessonId);
+
+        return {
+          success: true
+        };
+      }
+
+      // HIDE / UNHIDE
+      if (method === 'POST') {
+
+        await hideLesson(
+          lessonId,
+          body.isHidden
+        );
+
+        return {
+          success: true
+        };
+      }
+    }
+
+    // ========================================
+    // PROGRESS
+    // ========================================
+
+    if (endpoint === '/api/progress' && method === 'GET') {
+
+      return {
+        progress: await getProgress()
+      };
+    }
+
+    if (
+      endpoint === '/api/progress/update' &&
+      method === 'POST'
+    ) {
+
+      await updateProgress(
+        body.lessonId,
+        body.status
+      );
 
       return {
         success: true
       };
     }
 
-    // DELETE
-    if (method === 'DELETE') {
+    // ========================================
+    // UNKNOWN ENDPOINT
+    // ========================================
 
-      await deleteLesson(lessonId);
+    throw new Error(
+      `Unsupported endpoint: ${endpoint}`
+    );
 
-      return {
-        success: true
-      };
-    }
+  } catch (error) {
 
-    // POST = hide/unhide
-    if (method === 'POST') {
+    console.error(
+      "API Request Error:",
+      endpoint,
+      error
+    );
 
-      await hideLesson(lessonId, body.isHidden);
-
-      return {
-        success: true
-      };
-    }
+    throw error;
   }
-
-  // ========================================
-  // PROGRESS
-  // ========================================
-
-  if (endpoint === '/api/progress') {
-
-    return {
-      progress: await getProgress()
-    };
-  }
-
-  if (endpoint === '/api/progress/update' && method === 'POST') {
-
-    await updateProgress(body.lessonId, body.status);
-
-    return {
-      success: true
-    };
-  }
-
-  throw new Error(`Unsupported endpoint: ${endpoint}`);
 }
