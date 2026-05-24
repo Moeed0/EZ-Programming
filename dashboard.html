@@ -81,10 +81,6 @@
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     }
 
-    .card-clickable {
-      cursor: pointer;
-    }
-
     .lesson-card h3 {
       margin: 14px 0 10px;
       color: #0f172a;
@@ -156,7 +152,6 @@
       }
     }
 
-    /* Debug Panel */
     .debug-panel {
       position: fixed;
       right: 16px;
@@ -189,19 +184,26 @@
       max-height: 260px;
     }
 
-    .seed-btn {
-      margin: 10px;
-      padding: 10px 14px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
+    .log-entry {
+      margin-bottom: 8px;
+      line-height: 1.4;
+      word-break: break-word;
     }
 
-    .seed-btn:hover {
-      background: #1d4ed8;
+    .log-success {
+      color: #4ade80;
+    }
+
+    .log-error {
+      color: #f87171;
+    }
+
+    .log-warn {
+      color: #facc15;
+    }
+
+    .log-info {
+      color: #cbd5e1;
     }
   </style>
 </head>
@@ -262,17 +264,12 @@
     <p id="loadError" style="display:none; text-align:center; color:red; margin-top:12px;"></p>
   </div>
 
-  <!-- Debug Panel with Seed Button -->
+  <!-- Debug Panel -->
   <div id="debugPanel" class="debug-panel">
     <div id="toggleDebugBtn" class="debug-panel-header">
       <span>Diagnostics</span>
       <span id="debugToggleIcon">▼</span>
     </div>
-
-    <div style="padding:10px;">
-      <button id="seedLessonsBtn" class="seed-btn">🌱 Seed Sample Lessons (1-10)</button>
-    </div>
-
     <div id="debugLog"></div>
   </div>
 
@@ -280,18 +277,13 @@
   <div id="footer"></div>
 
   <script type="module">
-    import {
-      renderNavbar,
-      renderFooter
-    } from './js/navbar.js?v=1.1';
-
+    import { renderNavbar, renderFooter } from './js/navbar.js?v=1.1';
     import {
       onAuthChange,
       apiRequest,
       getCurrentUser,
       getUserProfile,
-      getProgress,
-      createLesson   // ← Imported for seeding
+      getProgress
     } from './js/auth.js?v=1.1';
 
     renderNavbar('dashboard');
@@ -300,17 +292,13 @@
     let debugVisible = true;
     let userProgress = {};
 
-    // -----------------------------
-    // DEBUG LOGGER
-    // -----------------------------
+    // Debug Logger
     function D(message, type = 'info') {
       const log = document.getElementById('debugLog');
       const time = new Date().toLocaleTimeString();
-
       const div = document.createElement('div');
       div.className = `log-entry ${type === 'err' ? 'log-error' : type === 'warn' ? 'log-warn' : type === 'ok' ? 'log-success' : 'log-info'}`;
       div.textContent = `[${time}] ${message}`;
-
       if (log) {
         log.prepend(div);
         if (log.children.length > 80) log.lastChild.remove();
@@ -325,75 +313,37 @@
       document.getElementById('debugToggleIcon').textContent = debugVisible ? '▼' : '▲';
     });
 
-    // Seed Lessons Button
-    document.getElementById('seedLessonsBtn').addEventListener('click', async () => {
-      if (!confirm('Seed 10 sample lessons into Firestore?')) return;
-
-      const lessons = [
-        { title: 'Hello World in Python', topic: 'Introduction', difficulty: 'beginner', orderIndex: 1, isPublished: true, isHidden: false },
-        { title: 'Variables and Data Types', topic: 'Basics', difficulty: 'beginner', orderIndex: 2, isPublished: true, isHidden: false },
-        { title: 'Conditional Statements', topic: 'Control Flow', difficulty: 'beginner', orderIndex: 3, isPublished: true, isHidden: false },
-        { title: 'Loops - For and While', topic: 'Control Flow', difficulty: 'intermediate', orderIndex: 4, isPublished: true, isHidden: false },
-        { title: 'Functions in Python', topic: 'Functions', difficulty: 'intermediate', orderIndex: 5, isPublished: true, isHidden: false },
-        { title: 'Lists and Tuples', topic: 'Data Structures', difficulty: 'intermediate', orderIndex: 6, isPublished: true, isHidden: false },
-        { title: 'Dictionaries (Key-Value)', topic: 'Data Structures', difficulty: 'intermediate', orderIndex: 7, isPublished: true, isHidden: false },
-        { title: 'List Comprehensions', topic: 'Advanced Basics', difficulty: 'intermediate', orderIndex: 8, isPublished: true, isHidden: false },
-        { title: 'Error Handling (Try/Except)', topic: 'Error Handling', difficulty: 'intermediate', orderIndex: 9, isPublished: true, isHidden: false },
-        { title: 'File I/O Basics', topic: 'File Handling', difficulty: 'advanced', orderIndex: 10, isPublished: true, isHidden: false }
-      ];
-
-      D('Starting to seed lessons...', 'warn');
-
-      try {
-        for (const lesson of lessons) {
-          await createLesson(lesson);
-          D(`✅ Created: ${lesson.title}`, 'ok');
-        }
-        D('All lessons seeded successfully!', 'ok');
-        alert('✅ 10 sample lessons have been added to Firestore!');
-
-        // Refresh dashboard
-        const freshLessons = await loadLessons();
-        renderLessons(freshLessons);
-      } catch (err) {
-        D(`❌ Seeding failed: ${err.message}`, 'err');
-        alert('Seeding failed. Check console/debug panel.');
-      }
-    });
-
-    // Global error handlers
+    // Global Error Handlers
     window.addEventListener('error', (e) => D(`ERROR: ${e.message}`, 'err'));
     window.addEventListener('unhandledrejection', (e) => D(`PROMISE ERROR: ${e.reason}`, 'err'));
 
-    // -----------------------------
-    // LOAD LESSONS
-    // -----------------------------
+    // Load Lessons
     async function loadLessons() {
       D('Loading lessons from Firestore...');
       try {
         const data = await apiRequest('/api/lessons');
-        const list = data?.lessons || [];
-        D(`Loaded ${list.length} lessons`, 'ok');
-        return list;
+        const lessons = data?.lessons || [];
+        D(`Loaded ${lessons.length} lessons`, 'ok');
+        return lessons;
       } catch (err) {
         D(`Failed to load lessons: ${err.message}`, 'err');
         return [];
       }
     }
 
-    // -----------------------------
-    // LOAD PROGRESS
-    // -----------------------------
+    // Load Progress
     async function loadProgress() {
       try {
         const progress = await getProgress();
         const map = {};
         if (Array.isArray(progress)) {
           progress.forEach(p => {
-            if (p.lessonId && p.status) map[p.lessonId] = p.status;
+            if (p.lessonId && p.status) {
+              map[p.lessonId] = p.status;
+            }
           });
         }
-        D('Progress loaded', 'ok');
+        D('Progress loaded successfully', 'ok');
         return map;
       } catch (error) {
         D(`Progress load error: ${error.message}`, 'warn');
@@ -401,47 +351,53 @@
       }
     }
 
+    // Update Progress Bar
     function updateProgressBar(done, total) {
       const percent = total > 0 ? Math.round((done / total) * 100) : 0;
       document.getElementById('progressFill').style.width = percent + '%';
       document.getElementById('progressPercent').textContent = percent + '%';
     }
 
-    // -----------------------------
-    // RENDER LESSONS
-    // -----------------------------
+    // Render Lessons
     function renderLessons(lessons) {
       const container = document.getElementById('lessonsContainer');
 
       if (!lessons.length) {
-        container.innerHTML = '<p style="text-align:center; color:#64748b; padding:60px 20px;">No lessons available yet.<br><small>Click "Seed Sample Lessons" in debug panel.</small></p>';
+        container.innerHTML = `<p style="text-align:center; color:#64748b; padding:60px;">No lessons available yet.</p>`;
         return;
       }
 
       const completed = Object.values(userProgress).filter(s => s === 'completed').length;
       updateProgressBar(completed, lessons.length);
 
-      container.innerHTML = `<div class="lessons-grid">${lessons.map(lesson => {
+      container.innerHTML = `
+        <div class="lessons-grid">
+          ${lessons.map(lesson => {
         const status = userProgress[lesson.id] || '';
-        const statusHTML = status === 'completed' ? '<span class="lesson-card-status completed">Completed</span>' :
-          status === 'in-progress' ? '<span class="lesson-card-status in-progress">In Progress</span>' :
-            '<span class="lesson-card-status text-secondary">Not Started</span>';
+        let statusHTML = status === 'completed'
+          ? '<span class="lesson-card-status completed">Completed ✓</span>'
+          : status === 'in-progress'
+            ? '<span class="lesson-card-status in-progress">In Progress</span>'
+            : '<span class="lesson-card-status text-secondary">Not Started</span>';
 
         const badgeClass = lesson.difficulty === 'beginner' ? 'badge-beginner' :
           lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
 
         return `
-          <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;">
-            <div class="lesson-card card-clickable">
-              <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
-              <h3>${lesson.title}</h3>
-              <p>${lesson.topic}</p>
-              ${statusHTML}
-            </div>
-          </a>`;
-      }).join('')}</div>`;
+              <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;">
+                <div class="lesson-card">
+                  <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
+                  <h3>${lesson.title}</h3>
+                  <p>${lesson.topic}</p>
+                  ${statusHTML}
+                </div>
+              </a>
+            `;
+      }).join('')}
+        </div>`;
     }
 
+    // Load Profile
     async function loadProfile(user) {
       try {
         const profile = await getUserProfile(user.uid);
@@ -453,8 +409,9 @@
       }
     }
 
+    // Start Dashboard
     async function startDashboard(user) {
-      D(`Logged in: ${user.uid}`, 'ok');
+      D(`User logged in: ${user.uid}`, 'ok');
       await loadProfile(user);
 
       const [lessons, progress] = await Promise.all([loadLessons(), loadProgress()]);
@@ -463,6 +420,7 @@
       D('Dashboard ready', 'ok');
     }
 
+    // Init
     async function initDashboard() {
       try {
         D('Initializing dashboard...');
@@ -478,6 +436,7 @@
       }
     }
 
+    // Refresh on page show
     window.addEventListener('pageshow', async () => {
       const user = getCurrentUser();
       if (user) {
@@ -487,7 +446,7 @@
       }
     });
 
-    // Start
+    // Start App
     initDashboard();
   </script>
 </body>
