@@ -181,7 +181,7 @@ export async function getLessonById(lessonId) {
 }
 
 // ============================================
-// CREATE LESSON (Fixed)
+// CREATE LESSON
 // ============================================
 
 export async function createLesson(data) {
@@ -204,7 +204,7 @@ export async function createLesson(data) {
     };
 
     const docRef = await addDoc(collection(db, "lessons"), lessonData);
-    console.log(`✅ Lesson created successfully: ${data.title} (ID: ${docRef.id})`);
+    console.log(`✅ Lesson created: ${data.title} (ID: ${docRef.id})`);
     return docRef.id;
 
   } catch (error) {
@@ -214,7 +214,7 @@ export async function createLesson(data) {
 }
 
 // ============================================
-// UPDATE / HIDE / DELETE LESSON
+// UPDATE / HIDE / DELETE
 // ============================================
 
 export async function updateLesson(lessonId, data) {
@@ -251,27 +251,29 @@ export async function deleteLesson(lessonId) {
 }
 
 // ============================================
-// PROGRESS
+// PROGRESS - FIXED
 // ============================================
 
 export async function getProgress() {
+  const user = getCurrentUser();
+  if (!user) {
+    console.log("GetProgress: No user logged in");
+    return [];
+  }
   try {
-    const user = getCurrentUser();
-    if (!user) return [];
-
     const q = query(
       collection(db, "progress"),
       where("userId", "==", user.uid)
     );
-
     const snap = await getDocs(q);
-
-    return snap.docs.map(docSnap => ({
+    const progress = snap.docs.map(docSnap => ({
       id: docSnap.id,
       ...docSnap.data()
     }));
-  } catch (error) {
-    console.error("Get Progress Error:", error);
+    console.log(`✅ getProgress() returned ${progress.length} records`);
+    return progress;
+  } catch (err) {
+    console.error("Get Progress Error:", err);
     return [];
   }
 }

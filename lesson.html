@@ -64,7 +64,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
   <script type="module">
@@ -81,31 +81,59 @@
     });
 
     async function loadLesson() {
+
       try {
-        const data = await apiRequest(`/api/lessons/${lessonId}`);
-        if (!data?.lesson) throw new Error("Lesson not found");
+
+        const data =
+          await apiRequest(`/api/lessons/${lessonId}`);
+
+        if (!data?.lesson) {
+          throw new Error("Lesson not found");
+        }
 
         const lesson = data.lesson;
+
         document.getElementById('contentArea').innerHTML = `
-          <a href="dashboard.html" style="color:#60a5fa;">← Back to Dashboard</a>
-          <h1>${lesson.title}</h1>
-          <p><strong>Topic:</strong> ${lesson.topic} | <strong>Difficulty:</strong> ${lesson.difficulty}</p>
-          
-          <div style="margin:25px 0; line-height:1.8;">
-            ${lesson.content || '<p>No content available.</p>'}
-          </div>
+      <a href="dashboard.html" style="color:#60a5fa;">
+        ← Back to Dashboard
+      </a>
 
-          <div class="hint-panel">
-            <h3>Hint</h3>
-            <p>${lesson.hint || 'No hint available.'}</p>
-          </div>
-        `;
+      <h1>${lesson.title}</h1>
 
-        console.log("✅ Lesson loaded successfully:", lesson);
+      <p>
+        <strong>Topic:</strong> ${lesson.topic}
+        |
+        <strong>Difficulty:</strong> ${lesson.difficulty}
+      </p>
+
+      <div style="margin:25px 0; line-height:1.8;">
+        ${lesson.content || '<p>No content available.</p>'}
+      </div>
+
+      <div class="hint-panel">
+        <h3>Hint</h3>
+        <p>${lesson.hint || 'No hint available.'}</p>
+      </div>
+    `;
+
+        // Load starter code into Monaco
+        if (editor) {
+          editor.setValue(
+            lesson.starterCode || ''
+          );
+        }
+
+        console.log("✅ Lesson loaded:", lesson);
 
       } catch (err) {
+
         console.error(err);
-        document.getElementById('contentArea').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+
+        document.getElementById('contentArea').innerHTML = `
+      <p style="color:red;">
+        Error: ${err.message}
+      </p>
+    `;
       }
     }
   </script>
