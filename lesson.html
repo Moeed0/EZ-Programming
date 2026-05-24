@@ -99,11 +99,6 @@
       font-weight: 600;
     }
 
-    .btn-sm {
-      padding: 7px 12px;
-      font-size: 0.85rem;
-    }
-
     .btn-secondary {
       background: #2563eb;
       color: white;
@@ -143,7 +138,6 @@
       border-top: 4px solid #3b82f6;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-bottom: 12px;
     }
 
     @keyframes spin {
@@ -179,35 +173,24 @@
           <button class="btn btn-outline btn-sm" id="resetBtn">Reset</button>
         </div>
       </div>
-
       <div id="editorContainer" class="editor-container"></div>
-
       <div class="output-panel">
         <div class="output-header">
           <span>Output</span>
           <button class="btn btn-outline btn-sm" id="clearOutputBtn">Clear</button>
         </div>
-        <div class="output-content" id="outputContent">
-          Click "Run Code" to see output here...
-        </div>
+        <div class="output-content" id="outputContent">Click "Run Code" to see output here...</div>
       </div>
     </div>
   </div>
 
-  <!-- Monaco Editor -->
+  <!-- Monaco & Pyodide -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-  <!-- Pyodide -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
   <script type="module">
     import { renderNavbar, showToast } from './js/navbar.js?v=1.1';
-    import {
-      apiRequest,
-      getCurrentUser,
-      onAuthChange,
-      updateProgress,
-      getProgress
-    } from './js/auth.js?v=1.1';
+    import { apiRequest, getCurrentUser, onAuthChange, updateProgress, getProgress } from './js/auth.js?v=1.1';
 
     renderNavbar('lesson');
 
@@ -218,27 +201,22 @@
     let pyodide = null;
     let currentStarterCode = '';
 
-    // Auth Check + Load Lesson
     onAuthChange(async (user) => {
       if (!user) {
         window.location.href = 'login.html';
         return;
       }
-      if (lessonId) {
-        await loadLesson();
-      }
+      if (lessonId) await loadLesson();
     });
 
     async function loadLesson() {
-      const loadingSpinner = document.getElementById('loadingSpinner');
-      if (loadingSpinner) loadingSpinner.style.display = 'flex';
+      const spinner = document.getElementById('loadingSpinner');
+      if (spinner) spinner.style.display = 'flex';
 
       try {
         const data = await apiRequest(`/api/lessons/${lessonId}`);
 
-        if (!data || !data.lesson) {
-          throw new Error('Lesson not found');
-        }
+        if (!data?.lesson) throw new Error("Lesson not found");
 
         renderLessonContent(data.lesson);
         await syncProgress();
@@ -249,28 +227,24 @@
           <div style="padding:40px; text-align:center;">
             <h2>Error Loading Lesson</h2>
             <p>${error.message}</p>
-            <a href="dashboard.html" style="color:#3b82f6; margin-top:20px; display:inline-block;">
-              ← Back to Dashboard
-            </a>
+            <a href="dashboard.html" style="color:#60a5fa; margin-top:20px;">← Back to Dashboard</a>
           </div>
         `;
       } finally {
-        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (spinner) spinner.style.display = 'none';
       }
     }
 
     function renderLessonContent(lesson) {
       document.title = `${lesson.title} - EZ Programming`;
 
-      let html = `
-        <a href="dashboard.html" style="color:#3b82f6; text-decoration:none; display:inline-block; margin-bottom:20px;">
-          ← Back to Dashboard
-        </a>
-
+      document.getElementById('lessonContentPanel').innerHTML = `
+        <a href="dashboard.html" style="color:#60a5fa; text-decoration:none; display:inline-block; margin-bottom:20px;">← Back to Dashboard</a>
+        
         <h1>${lesson.title}</h1>
         <p><strong>Topic:</strong> ${lesson.topic} | <strong>Difficulty:</strong> ${lesson.difficulty}</p>
 
-        <div style="margin-top:30px; line-height:1.7;">
+        <div style="margin: 30px 0; line-height: 1.8;">
           ${lesson.content || '<p>No detailed content available yet.</p>'}
         </div>
 
@@ -279,23 +253,16 @@
           <p>${lesson.hint || 'No hint available.'}</p>
         </div>
 
-        <div style="margin-top:30px;">
-          <button class="btn btn-success" id="markCompleteBtn">
-            Mark as Completed
-          </button>
+        <div style="margin-top: 30px;">
+          <button class="btn btn-success" id="markCompleteBtn">Mark as Completed</button>
         </div>
       `;
-
-      document.getElementById('lessonContentPanel').innerHTML = html;
 
       currentStarterCode = lesson.starterCode || 'print("Hello World")';
       initEditor(currentStarterCode);
 
-      // Attach mark complete button
       const markBtn = document.getElementById('markCompleteBtn');
-      if (markBtn) {
-        markBtn.addEventListener('click', () => markLessonComplete(lesson.id));
-      }
+      if (markBtn) markBtn.addEventListener('click', () => markLessonComplete(lesson.id));
     }
 
     async function syncProgress() {
@@ -309,15 +276,11 @@
             btn.disabled = true;
           }
         }
-      } catch (err) {
-        console.error('Progress sync error:', err);
-      }
+      } catch (e) { }
     }
 
     async function markLessonComplete(lessonId) {
       const btn = document.getElementById('markCompleteBtn');
-      if (!btn) return;
-
       btn.disabled = true;
       btn.textContent = 'Saving...';
 
@@ -325,15 +288,13 @@
         await updateProgress(lessonId, 'completed');
         btn.textContent = 'Completed ✓';
         showToast('Lesson marked as completed!', 'success');
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
         btn.disabled = false;
         btn.textContent = 'Mark as Completed';
         showToast('Failed to save progress', 'error');
       }
     }
 
-    // Monaco Editor
     function initEditor(starterCode) {
       require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
@@ -351,33 +312,20 @@
           theme: 'vs-dark',
           automaticLayout: true,
           fontSize: 14,
-          wordWrap: 'on',
-          minimap: { enabled: false }
+          wordWrap: 'on'
         });
       });
     }
 
-    // Pyodide
     async function initPyodide() {
       const outputEl = document.getElementById('outputContent');
       try {
-        outputEl.textContent = 'Loading Python environment...';
         pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/' });
         outputEl.textContent = 'Python ready ✓';
-      } catch (error) {
-        console.error(error);
+      } catch (e) {
         outputEl.textContent = 'Failed to load Python environment.';
-        outputEl.classList.add('error');
       }
     }
-
-    // Run Code (basic)
-    document.getElementById('runBtn').addEventListener('click', async () => {
-      if (!editor || !pyodide) return;
-      // You can expand this later
-      const outputEl = document.getElementById('outputContent');
-      outputEl.textContent = "Run functionality is ready (expand if needed).";
-    });
 
     document.getElementById('resetBtn').addEventListener('click', () => {
       if (editor) editor.setValue(currentStarterCode);
@@ -387,7 +335,6 @@
       document.getElementById('outputContent').textContent = '';
     });
 
-    // Initialize
     initPyodide();
   </script>
 </body>
