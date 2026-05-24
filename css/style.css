@@ -1,31 +1,46 @@
 /* ============================================
-   EZ Programming - Custom Styles
-   Design: Minimal Modern Educational UI
-   Colors: Solid only, no gradients
+   EZ Programming - Full Updated Styles
    ============================================ */
 
-/* --- Design Tokens --- */
 :root {
   --color-primary: #2563EB;
   --color-primary-hover: #1D4ED8;
   --color-secondary: #84CC16;
   --color-secondary-hover: #65A30D;
+
   --color-bg: #F3F4F6;
   --color-surface: #FFFFFF;
+
   --color-text: #0F172A;
   --color-text-secondary: #64748B;
+
   --color-border: #E2E8F0;
+
   --color-error: #DC2626;
   --color-success: #16A34A;
+
   --radius: 16px;
   --radius-sm: 8px;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
+
+  --shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+
+  --shadow-md:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 2px 4px rgba(0, 0, 0, 0.03);
+
+  --shadow-lg:
+    0 10px 15px rgba(0, 0, 0, 0.06),
+    0 4px 6px rgba(0, 0, 0, 0.04);
+
   --font: 'Inter', sans-serif;
 }
 
-/* --- Base Reset --- */
+/* ============================================
+   RESET
+   ============================================ */
+
 * {
   margin: 0;
   padding: 0;
@@ -34,7 +49,7 @@
 
 body {
   font-family: var(--font);
-  background-color: var(--color-bg);
+  background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.6;
   min-height: 100vh;
@@ -45,26 +60,33 @@ a {
   color: inherit;
 }
 
-/* --- Navbar --- */
+/* ============================================
+   NAVBAR
+   ============================================ */
+
 .navbar {
-  background-color: var(--color-surface);
+  background: white;
   border-bottom: 1px solid var(--color-border);
-  padding: 0 24px;
+
   height: 64px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  padding: 0 24px;
+
   position: sticky;
   top: 0;
   z-index: 100;
+
   box-shadow: var(--shadow);
 }
 
 .navbar-brand {
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-primary);
-  letter-spacing: -0.025em;
 }
 
 .navbar-links {
@@ -75,36 +97,48 @@ a {
 
 .navbar-links a {
   padding: 8px 16px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text);
   border-radius: var(--radius-sm);
-  transition: background-color 0.2s ease, color 0.2s ease;
+
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  transition: 0.2s;
 }
 
 .navbar-links a:hover {
-  background-color: var(--color-bg);
+  background: #EFF6FF;
   color: var(--color-primary);
 }
 
 .navbar-links a.active {
+  background: #EFF6FF;
   color: var(--color-primary);
-  background-color: #EFF6FF;
 }
 
-/* --- Buttons --- */
+/* ============================================
+   BUTTONS
+   ============================================ */
+
 .btn {
+  border: none;
+  outline: none;
+  cursor: pointer;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 24px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  border: none;
+
+  gap: 8px;
+
+  padding: 10px 20px;
+
   border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+
   font-family: var(--font);
+  font-weight: 600;
+  font-size: 0.875rem;
+
+  transition: 0.2s;
 }
 
 .btn:active {
@@ -112,61 +146,63 @@ a {
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
-  color: #FFFFFF;
+  background: var(--color-primary);
+  color: white;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-hover);
+  background: var(--color-primary-hover);
 }
 
 .btn-secondary {
-  background-color: var(--color-secondary);
-  color: #FFFFFF;
+  background: var(--color-secondary);
+  color: white;
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-secondary-hover);
+  background: var(--color-secondary-hover);
 }
 
 .btn-outline {
-  background-color: transparent;
-  color: var(--color-primary);
+  background: transparent;
   border: 2px solid var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btn-outline:hover {
-  background-color: var(--color-primary);
-  color: #FFFFFF;
+  background: var(--color-primary);
+  color: white;
 }
 
 .btn-danger {
-  background-color: var(--color-error);
-  color: #FFFFFF;
+  background: var(--color-error);
+  color: white;
 }
 
 .btn-danger:hover {
-  background-color: #B91C1C;
+  background: #B91C1C;
 }
 
 .btn-sm {
-  padding: 6px 16px;
+  padding: 6px 14px;
   font-size: 0.8125rem;
 }
 
-.btn-lg {
-  padding: 14px 32px;
-  font-size: 1rem;
-}
+/* ============================================
+   CARDS
+   ============================================ */
 
-/* --- Cards --- */
 .card {
-  background-color: var(--color-surface);
+  background: white;
   border: 1px solid var(--color-border);
+
   border-radius: var(--radius);
+
   padding: 24px;
+
   box-shadow: var(--shadow);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  transition: 0.2s;
 }
 
 .card:hover {
@@ -179,105 +215,17 @@ a {
 }
 
 /* ============================================
-   LESSON CONTENT STYLES (Added)
+   DASHBOARD
    ============================================ */
 
-.lesson-content-panel h1 {
-  color: #ffffff;
-  font-size: 2rem;
-  margin-bottom: 12px;
-}
-
-.lesson-content-panel p {
-  color: #d1d5db;
-  line-height: 1.8;
-  font-size: 1rem;
-}
-
-.lesson-content-panel strong {
-  color: #ffffff;
-}
-
-.lesson-content-panel h2,
-.lesson-content-panel h3,
-.lesson-content-panel h4 {
-  color: #93c5fd;
-  margin-top: 24px;
-}
-
-.lesson-content-panel code {
-  background: #1e293b;
-  color: #facc15;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-family: monospace;
-}
-
-.lesson-content-panel pre {
-  background: #020617;
-  color: #22c55e;
-  padding: 16px;
-  border-radius: 10px;
-  overflow-x: auto;
-}
-
-.lesson-content-panel ul,
-.lesson-content-panel ol {
-  color: #d1d5db;
-  padding-left: 24px;
-}
-
-.lesson-content-panel a {
-  color: #60a5fa;
-}
-
-.hint-panel h3 {
-  color: #facc15;
-}
-
-.hint-panel p {
-  color: #e5e7eb;
-}
-
-/* ============================================
-   REST OF YOUR STYLES
-   ============================================ */
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 6px;
-}
-
-.form-input {
-  width: 100%;
-  padding: 12px 16px;
-  font-size: 0.9375rem;
-  font-family: var(--font);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-/* --- Dashboard --- */
 .dashboard-container {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 40px 24px;
+}
+
+.dashboard-header {
+  margin-bottom: 32px;
 }
 
 .lessons-grid {
@@ -287,53 +235,53 @@ a {
 }
 
 .lesson-card {
-  padding: 24px;
   position: relative;
 }
 
 .lesson-card-badge {
   display: inline-block;
+
   padding: 4px 12px;
+
+  border-radius: 999px;
+
   font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 4px;
-  margin-bottom: 12px;
+  font-weight: 700;
+
+  margin-bottom: 14px;
+
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .badge-beginner {
-  background-color: #DCFCE7;
+  background: #DCFCE7;
   color: #166534;
 }
 
 .badge-intermediate {
-  background-color: #FEF3C7;
+  background: #FEF3C7;
   color: #92400E;
 }
 
 .badge-advanced {
-  background-color: #FEE2E2;
+  background: #FEE2E2;
   color: #991B1B;
 }
 
 .lesson-card h3 {
-  font-size: 1.0625rem;
-  font-weight: 700;
-  margin-bottom: 6px;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
   color: var(--color-text);
 }
 
 .lesson-card p {
-  font-size: 0.875rem;
   color: var(--color-text-secondary);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .lesson-card-status {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .lesson-card-status.completed {
@@ -344,28 +292,378 @@ a {
   color: var(--color-primary);
 }
 
-/* --- Other styles (kept from your original) --- */
-.footer {
-  background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  padding: 24px;
-  text-align: center;
-  margin-top: 60px;
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+
+.progress-bar-container {
+  margin-bottom: 32px;
 }
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+
+  margin-bottom: 8px;
+
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 14px;
+  background: #E5E7EB;
+
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+
+  border-radius: 999px;
+
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   LESSON PAGE
+   ============================================ */
+
+.lesson-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  min-height: calc(100vh - 64px);
+}
+
+/* LEFT SIDE CONTENT */
+
+.lesson-content-panel {
+  background: white;
+  color: #111827;
+
+  padding: 40px;
+
+  overflow-y: auto;
+}
+
+.lesson-content-panel h1 {
+  color: #111827;
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+.lesson-content-panel h2 {
+  color: #1D4ED8;
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.lesson-content-panel h3,
+.lesson-content-panel h4 {
+  color: #2563EB;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.lesson-content-panel p {
+  color: #374151;
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.lesson-content-panel strong {
+  color: #111827;
+}
+
+.lesson-content-panel ul,
+.lesson-content-panel ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+  color: #374151;
+}
+
+.lesson-content-panel li {
+  margin-bottom: 8px;
+}
+
+.lesson-content-panel a {
+  color: #2563EB;
+}
+
+.lesson-content-panel code {
+  background: #E5E7EB;
+  color: #111827;
+
+  padding: 2px 6px;
+  border-radius: 6px;
+
+  font-family: monospace;
+}
+
+.lesson-content-panel pre {
+  background: #111827;
+  color: #22C55E;
+
+  padding: 18px;
+  border-radius: 12px;
+
+  overflow-x: auto;
+
+  margin-bottom: 20px;
+}
+
+/* HINT PANEL */
+
+.hint-panel {
+  margin-top: 30px;
+
+  padding: 24px;
+
+  background: #F9FAFB;
+
+  border: 1px solid #E5E7EB;
+
+  border-radius: 14px;
+}
+
+.hint-panel h3 {
+  color: #CA8A04;
+  margin-bottom: 10px;
+}
+
+.hint-panel p {
+  color: #374151;
+}
+
+/* ============================================
+   EDITOR PANEL
+   ============================================ */
+
+.lesson-editor-panel {
+  background: #0F172A;
+  border-left: 1px solid #1E293B;
+}
+
+.editor-toolbar {
+  padding: 14px 18px;
+
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  background: #111827;
+
+  border-bottom: 1px solid #1E293B;
+}
+
+.editor-title {
+  color: white;
+  font-weight: 600;
+  margin-right: auto;
+}
+
+#editorContainer {
+  height: 500px;
+}
+
+#output {
+  background: #020617;
+  color: #22C55E;
+
+  padding: 18px;
+
+  font-family: monospace;
+
+  border-top: 1px solid #1E293B;
+
+  min-height: 140px;
+
+  overflow-x: auto;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.form-input {
+  width: 100%;
+
+  padding: 12px 16px;
+
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  font-family: var(--font);
+  font-size: 0.95rem;
+
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+
+  border-color: var(--color-primary);
+
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   ADMIN PANEL
+   ============================================ */
+
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  padding: 40px 24px;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 30px;
+}
+
+.admin-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  background: white;
+
+  border-radius: 14px;
+  overflow: hidden;
+
+  box-shadow: var(--shadow);
+}
+
+.admin-table th {
+  background: #F8FAFC;
+
+  text-align: left;
+
+  padding: 16px;
+
+  font-size: 0.9rem;
+}
+
+.admin-table td {
+  padding: 16px;
+
+  border-top: 1px solid #E5E7EB;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.status-published {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+.status-draft {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.5);
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 999;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: white;
+
+  width: 90%;
+  max-width: 700px;
+
+  padding: 30px;
+
+  border-radius: 20px;
+
+  box-shadow: var(--shadow-lg);
+}
+
+.modal h2 {
+  margin-bottom: 24px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  margin-top: 24px;
+}
+
+/* ============================================
+   TOAST
+   ============================================ */
 
 .toast {
   position: fixed;
+
   top: 80px;
   right: 24px;
+
   padding: 14px 24px;
-  border-radius: var(--radius-sm);
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #FFFFFF;
-  z-index: 300;
+
+  border-radius: 10px;
+
+  color: white;
+
+  font-weight: 600;
+
+  z-index: 1000;
+
   transform: translateX(120%);
   transition: transform 0.3s ease;
-  max-width: 360px;
+
   box-shadow: var(--shadow-lg);
 }
 
@@ -374,16 +672,81 @@ a {
 }
 
 .toast-success {
-  background-color: var(--color-success);
+  background: var(--color-success);
 }
 
 .toast-error {
-  background-color: var(--color-error);
+  background: var(--color-error);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer {
+  background: white;
+
+  border-top: 1px solid var(--color-border);
+
+  padding: 24px;
+
+  text-align: center;
+
+  margin-top: 60px;
+}
+
+/* ============================================
+   LOADING
+   ============================================ */
+
+.loading {
+  text-align: center;
+  padding: 60px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 900px) {
+
   .lesson-container {
     grid-template-columns: 1fr;
+  }
+
+  .lesson-editor-panel {
+    border-left: none;
+    border-top: 1px solid #1E293B;
+  }
+
+  #editorContainer {
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .navbar {
+    padding: 0 16px;
+  }
+
+  .dashboard-container,
+  .admin-container {
+    padding: 24px 16px;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .lessons-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-table {
+    display: block;
+    overflow-x: auto;
   }
 }
