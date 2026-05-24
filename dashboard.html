@@ -1,313 +1,571 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Your learning dashboard - browse lessons and track progress.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Your learning dashboard - browse lessons and track progress." />
+
   <title>Dashboard - EZ Programming</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .dashboard-header {
+      margin-bottom: 24px;
+    }
+
+    .text-secondary {
+      color: #64748b;
+    }
+
+    .progress-bar-container {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 30px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #2563eb;
+      transition: width 0.3s ease;
+    }
+
+    .lessons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .lesson-card {
+      padding: 20px;
+      border-radius: 14px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      transition: 0.25s ease;
+      height: 100%;
+    }
+
+    .lesson-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-clickable {
+      cursor: pointer;
+    }
+
+    .lesson-card h3 {
+      margin: 14px 0 10px;
+      color: #0f172a;
+    }
+
+    .lesson-card p {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    .lesson-card-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .badge-beginner {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-intermediate {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-advanced {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .lesson-card-status {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .completed {
+      color: #16a34a;
+    }
+
+    .in-progress {
+      color: #2563eb;
+    }
+
+    .loading-container {
+      text-align: center;
+      padding: 50px 20px;
+    }
+
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #2563eb;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .debug-panel {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: 340px;
+      max-height: 320px;
+      background: #0f172a;
+      color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      z-index: 9999;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .debug-panel-header {
+      padding: 12px 14px;
+      background: #1e293b;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #debugLog {
+      overflow-y: auto;
+      padding: 10px;
+      font-size: 0.8rem;
+      max-height: 260px;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .log-success {
+      color: #4ade80;
+    }
+
+    .log-error {
+      color: #f87171;
+    }
+
+    .log-warn {
+      color: #facc15;
+    }
+
+    .log-info {
+      color: #cbd5e1;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 16px;
+      }
+
+      .debug-panel {
+        width: calc(100% - 32px);
+      }
+    }
+  </style>
 </head>
+
 <body>
   <!-- Navbar -->
   <div id="navbar"></div>
 
-  <!-- Dashboard Content -->
+  <!-- Main Dashboard -->
   <div class="dashboard-container">
+
     <!-- Header -->
     <div class="dashboard-header">
-      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <div style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          gap: 20px;
+          flex-wrap: wrap;
+        ">
         <div>
-          <h1 id="welcomeText" style="margin-bottom: 4px;">My Lessons</h1>
-          <p class="text-secondary">Browse available lessons and track your learning. Click a lesson to begin!</p>
+          <h1 id="welcomeText" style="margin-bottom: 6px;">My Lessons</h1>
+          <p class="text-secondary">
+            Browse available lessons and track your learning.
+          </p>
         </div>
       </div>
 
-      <!-- User Profile Card (Top Right) -->
-      <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
-        <div class="card" style="padding: 12px 20px; min-width: 260px; display: flex; align-items: center; gap: 16px; background-color: white; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background-color: var(--color-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.125rem;" id="userInitials">?</div>
-          <div style="overflow: hidden;">
-            <h4 style="margin: 0; font-size: 0.9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="profileName">Loading...</h4>
-            <p style="margin: 0; font-size: 0.75rem; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="profileEmail">...</p>
+      <!-- User Card -->
+      <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+        <div class="card" style="
+            padding: 14px 18px;
+            min-width: 260px;
+            display:flex;
+            align-items:center;
+            gap:14px;
+            background:white;
+            border:1px solid #E2E8F0;
+            border-radius:14px;
+          ">
+          <div id="userInitials" style="
+              width:48px;
+              height:48px;
+              border-radius:50%;
+              background:#2563eb;
+              color:white;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              font-weight:700;
+              font-size:1.1rem;
+            ">
+            ?
+          </div>
+
+          <div style="overflow:hidden;">
+            <h4 id="profileName" style="
+                margin:0;
+                font-size:0.95rem;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+              ">
+              Loading...
+            </h4>
+
+            <p id="profileEmail" style="
+                margin:0;
+                font-size:0.78rem;
+                color:#64748b;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+              ">
+              ...
+            </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Progress Bar -->
+    <!-- Progress -->
     <div class="progress-bar-container">
       <div class="progress-header">
-        <span id="progressLabel">Overall Progress</span>
+        <span>Overall Progress</span>
         <span id="progressPercent">0%</span>
       </div>
+
       <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        <div class="progress-fill" id="progressFill"></div>
       </div>
     </div>
 
-    <!-- Lessons Grid -->
+    <!-- Lessons -->
     <div id="lessonsContainer">
       <div class="loading-container">
         <div class="spinner"></div>
         <p>Loading lessons...</p>
       </div>
     </div>
-    <p id="loadError" style="display:none; text-align:center; color: var(--color-error); font-size:.8125rem; margin:8px 0;"></p>
 
-    <!-- Debug Panel — fixed bottom-right, always in DOM, toggle with header bar -->
-    <div id="debugPanel" class="debug-panel">
-      <div id="toggleDebugBtn" class="debug-panel-header" title="Click to collapse/expand">
-        <span>Diagnostics</span>
-        <span id="debugToggleIcon">&#9660;</span>
-      </div>
-      <div id="debugLog"></div>
+    <!-- Error -->
+    <p id="loadError" style="
+        display:none;
+        text-align:center;
+        color:red;
+        margin-top:12px;
+      "></p>
+  </div>
+
+  <!-- Debug Panel -->
+  <div id="debugPanel" class="debug-panel">
+    <div id="toggleDebugBtn" class="debug-panel-header">
+      <span>Diagnostics</span>
+      <span id="debugToggleIcon">▼</span>
     </div>
 
-    <!-- Footer -->
-    <div id="footer"></div>
+    <div id="debugLog"></div>
+  </div>
 
-    <script type="module">
-      import { renderNavbar, renderFooter, showToast } from './js/navbar.js?v=1.1';
-      import { onAuthChange, apiRequest, getCurrentUser, getUserProfile, createUserProfileIfMissing, getProgress } from './js/auth.js?v=1.1';
+  <!-- Footer -->
+  <div id="footer"></div>
 
-      renderNavbar('dashboard');
-      renderFooter();
+  <script type="module">
+    import {
+      renderNavbar,
+      renderFooter
+    } from './js/navbar.js?v=1.1';
 
-      // ── Build inline debug panel (visible by default — no DOM element needed) ────
-      var _dbgPadding = 16;
-      var _dbgVisible = true;
-      var _dbgMaxLines = 60;
+    import {
+      onAuthChange,
+      apiRequest,
+      getCurrentUser,
+      getUserProfile,
+      getProgress
+    } from './js/auth.js?v=1.1';
 
-      function D(msg, type) {
-        type = type || 'info';
-        var ts  = new Date().toLocaleTimeString('en-GB', { hour12: false });
-        var cls = type === 'err' ? 'log-error'
-                : type === 'warn' ? 'log-warn'
-                : type === 'ok'   ? 'log-success'
-                : 'log-info';
-        var el  = document.getElementById('debugLog');
-        if (el) {
-          el.innerHTML = '<div class="log-entry ' + cls + '">[' + ts + '] ' + msg + '</div>' + el.innerHTML;
-          var lines = el.querySelectorAll('.log-entry');
-          if (lines.length > _dbgMaxLines) { lines[_dbgMaxLines].remove(); }
-          if (el.scrollHeight > 240) el.scrollTop = el.scrollHeight - 240;
-        }
-        console.log('[Dash]', msg);
-      }
+    renderNavbar('dashboard');
+    renderFooter();
 
-      function toggleDebug() {
-        _dbgVisible = !_dbgVisible;
-        document.getElementById('debugPanel').style.display = _dbgVisible ? 'flex' : 'none';
-        var icon = document.getElementById('debugToggleIcon');
-        if (icon) icon.textContent = _dbgVisible ? '\u25BC' : '\u25B2';
-        D(_dbgVisible ? 'Debug panel SHOWN (toggle)' : 'Debug panel HIDDEN (toggle)');
-      }
+    // -----------------------------
+    // DEBUG LOGGER
+    // -----------------------------
+    let debugVisible = true;
 
-      document.getElementById('toggleDebugBtn').addEventListener('click', toggleDebug);
+    function D(message, type = 'info') {
+      const log = document.getElementById('debugLog');
+      const time = new Date().toLocaleTimeString();
 
-      // ── Catch all unhandled errors ──────────────────────────────────────────
-      window.addEventListener('error', function(e) {
-        D('UNCAUGHT ERROR: ' + e.message + ' @ ' + (e.filename || '') + ':' + (e.lineno || ''), 'err');
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        D('UNHANDLED REJECTION: ' + (e.reason && (e.reason.message || e.reason)), 'err');
-      });
+      const div = document.createElement('div');
+      div.className = 'log-entry ' + (
+        type === 'err' ? 'log-error' :
+          type === 'warn' ? 'log-warn' :
+            type === 'ok' ? 'log-success' : 'log-info'
+      );
 
+      div.textContent = `[${time}] ${message}`;
 
-      // Sample lessons (fallback when Firestore lessons collection is empty)
-      var sampleLessons = [
-        {id:'lesson-1',title:'Hello World in Python',topic:'Introduction',difficulty:'beginner',orderIndex:1,isPublished:true},
-        {id:'lesson-2',title:'Variables and Data Types',topic:'Basics',difficulty:'beginner',orderIndex:2,isPublished:true},
-        {id:'lesson-3',title:'Conditional Statements',topic:'Control Flow',difficulty:'beginner',orderIndex:3,isPublished:true},
-        {id:'lesson-4',title:'Loops - For and While',topic:'Control Flow',difficulty:'intermediate',orderIndex:4,isPublished:true},
-        {id:'lesson-5',title:'Functions in Python',topic:'Functions',difficulty:'intermediate',orderIndex:5,isPublished:true},
-        {id:'lesson-6',title:'Lists and Tuples',topic:'Data Structures',difficulty:'intermediate',orderIndex:6,isPublished:true},
-        {id:'lesson-7',title:'Dictionaries (Key-Value)',topic:'Data Structures',difficulty:'intermediate',orderIndex:7,isPublished:true},
-        {id:'lesson-8',title:'List Comprehensions',topic:'Advanced Basics',difficulty:'intermediate',orderIndex:8,isPublished:true},
-        {id:'lesson-9',title:'Error Handling (Try/Except)',topic:'Error Handling',difficulty:'intermediate',orderIndex:9,isPublished:true},
-        {id:'lesson-10',title:'File I/O Basics',topic:'File Handling',difficulty:'advanced',orderIndex:10,isPublished:true}
-      ];
-
-      var userProgress = {};
-
-      /**
-       * Load lessons from Firestore or fall back to sampleLessons.
-       */
-      async function loadLessons() {
-        D('loadLessons() — calling apiRequest(/api/lessons)');
-        try {
-          var data  = await apiRequest('/api/lessons');
-          var list  = data.lessons || (Array.isArray(data) ? data : []);
-          list      = list.length ? list : sampleLessons;
-          D('loadLessons() — ' + list.length + ' lessons returned');
-          return list;
-        } catch(err) {
-          D('loadLessons() FAILED: ' + err.message + ' — using sampleLessons', 'warn');
-          return sampleLessons;
+      if (log) {
+        log.prepend(div);
+        const entries = log.querySelectorAll('.log-entry');
+        if (entries.length > 80) {
+          entries[entries.length - 1].remove();
         }
       }
+      console.log('[Dashboard]', message);
+    }
 
-      /**
-       * Load user progress from Firestore.
-       * Returns an ARRAY of {lessonId, userId, status, ...} objects.
-       * The caller (onAuthChange / refreshProgressOnShow) stores
-       * the result into userProgress as an array.
-       */
-      // ── Normalise progress array → {lessonId: status} map ──────────────────
-      function normaliseProgress(items) {
-        var map = {};
-        if (Array.isArray(items)) {
-          items.forEach(function(p) {
-            if (p && p.lessonId && p.status) { map[String(p.lessonId)] = String(p.status); }
+    // Toggle debug panel
+    document.getElementById('toggleDebugBtn').addEventListener('click', () => {
+      debugVisible = !debugVisible;
+      document.getElementById('debugLog').style.display = debugVisible ? 'block' : 'none';
+      document.getElementById('debugToggleIcon').textContent = debugVisible ? '▼' : '▲';
+    });
+
+    // Global errors
+    window.addEventListener('error', (e) => D(`ERROR: ${e.message}`, 'err'));
+    window.addEventListener('unhandledrejection', (e) => D(`PROMISE ERROR: ${e.reason}`, 'err'));
+
+    // -----------------------------
+    // LOAD LESSONS (Fixed - No Fallback)
+    // -----------------------------
+    async function loadLessons() {
+      D('loadLessons() — calling apiRequest(/api/lessons)');
+
+      try {
+        const data = await apiRequest('/api/lessons');
+        const list = data?.lessons || [];
+        D(`loadLessons() — ${list.length} lessons returned from Firestore`, 'ok');
+        return list;
+      } catch (err) {
+        D(`loadLessons FAILED: ${err.message}`, 'err');
+        return [];
+      }
+    }
+
+    // -----------------------------
+    // LOAD USER PROGRESS
+    // -----------------------------
+    async function loadProgress() {
+      try {
+        const progress = await getProgress();
+        const map = {};
+
+        if (Array.isArray(progress)) {
+          progress.forEach((p) => {
+            if (p.lessonId && p.status) {
+              map[p.lessonId] = p.status;
+            }
           });
         }
+
+        D('Progress loaded successfully', 'ok');
         return map;
+      } catch (error) {
+        D(`Progress error: ${error.message}`, 'warn');
+        return {};
+      }
+    }
+
+    // -----------------------------
+    // UPDATE PROGRESS BAR
+    // -----------------------------
+    function updateProgressBar(done, total) {
+      const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+      document.getElementById('progressFill').style.width = percent + '%';
+      document.getElementById('progressPercent').textContent = percent + '%';
+    }
+
+    // -----------------------------
+    // RENDER LESSONS
+    // -----------------------------
+    function renderLessons(lessons) {
+      const container = document.getElementById('lessonsContainer');
+
+      if (!lessons.length) {
+        container.innerHTML = '<p style="text-align:center; color:#64748b; padding:40px;">No lessons available yet.</p>';
+        return;
       }
 
-      async function loadProgressFromFirestore() {
-        var user = getCurrentUser();
-        if (!user) { D('loadProgressFromFirestore — getCurrentUser() returned null', 'warn'); return []; }
-        D('loadProgressFromFirestore | uid: ' + user.uid, 'info');
-        var t0 = Date.now();
-        try {
-          const progress = await getProgress();
-          D('loadProgressFromFirestore — ' + progress.length + ' items in ' + (Date.now() - t0) + 'ms', 'ok');
-          return progress;
-        } catch(err) {
-          D('loadProgressFromFirestore FAILED: ' + (err.code||'') + ' ' + (err.message||err), 'err');
-          console.error('[Dash] loadProgressFromFirestore error:', err);
-          return [];
+      const completed = Object.values(userProgress).filter(s => s === 'completed').length;
+      updateProgressBar(completed, lessons.length);
+
+      container.innerHTML = `
+        <div class="lessons-grid">
+          ${lessons.map(lesson => {
+        const status = userProgress[lesson.id] || '';
+        let statusHTML = '';
+
+        if (status === 'completed') {
+          statusHTML = '<span class="lesson-card-status completed">Completed</span>';
+        } else if (status === 'in-progress') {
+          statusHTML = '<span class="lesson-card-status in-progress">In Progress</span>';
+        } else {
+          statusHTML = '<span class="lesson-card-status text-secondary">Not Started</span>';
         }
+
+        const badgeClass = lesson.difficulty === 'beginner' ? 'badge-beginner' :
+          lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
+
+        return `
+              <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;">
+                <div class="lesson-card card-clickable">
+                  <span class="lesson-card-badge ${badgeClass}">
+                    ${lesson.difficulty}
+                  </span>
+                  <h3>${lesson.title}</h3>
+                  <p>${lesson.topic}</p>
+                  ${statusHTML}
+                </div>
+              </a>
+            `;
+      }).join('')}
+        </div>`;
+    }
+
+    let userProgress = {};
+
+    // -----------------------------
+    // LOAD PROFILE
+    // -----------------------------
+    async function loadProfile(user) {
+      try {
+        const profile = await getUserProfile(user.uid);
+        document.getElementById('profileName').textContent = profile?.name || 'Learner';
+        document.getElementById('profileEmail').textContent = user.email || '';
+        document.getElementById('userInitials').textContent = (profile?.name || 'U').charAt(0).toUpperCase();
+      } catch (error) {
+        D(`Profile error: ${error.message}`, 'warn');
+        document.getElementById('profileName').textContent = 'Learner';
+        document.getElementById('profileEmail').textContent = user.email || '';
       }
+    }
 
-      /**
-       * Update progress bar width + percentage label.
-       */
-      function updateProgressBar(completedCount, totalLessons) {
-        var pct = totalLessons > 0 ? Math.round(completedCount / totalLessons * 100) : 0;
-        var fill = document.getElementById('progressFill');
-        var lbl  = document.getElementById('progressPercent');
-        if (fill) fill.style.width = pct + '%';
-        if (lbl)  lbl.textContent  = pct + '%';
-        D('progressBar: ' + completedCount + '/' + totalLessons + ' = ' + pct + '%');
-      }
+    // -----------------------------
+    // MAIN INIT
+    // -----------------------------
+    async function initDashboard() {
+      try {
+        D('Initializing dashboard...');
 
-      /**
-       * Build lesson-card HTML and update the progress bar.
-       */
-      function renderLessons(lessons) {
-        var container = document.getElementById('lessonsContainer');
-        var done      = Object.values(userProgress).filter(function(s) { return s === 'completed'; }).length;
-        var total     = lessons.length;
+        let user = getCurrentUser();
 
-        updateProgressBar(done, total);
-        D('renderLessons — ' + total + ' cards | completed=' + done);
-
-        if (lessons.length === 0) {
-          container.innerHTML = '<div class="text-center" style="padding:60px 24px;"><p class="text-secondary">No lessons yet.</p></div>';
+        if (!user) {
+          D('Waiting for authentication...', 'warn');
+          onAuthChange(async (u) => {
+            if (u) await startDashboard(u);
+          });
           return;
         }
 
-        container.innerHTML = '<div class="lessons-grid">' + lessons.map(function(l) {
-          var lid = String(l.id);
-          var s   = userProgress[lid] || '';
-          var st  = '', sc = '';
-          if (s === 'completed')       { st = 'Completed';  sc = 'completed'; }
-          else if (s === 'in-progress'){ st = 'In Progress'; sc = 'in-progress'; }
-          var b = l.difficulty === 'beginner' ? 'badge-beginner'
-                : l.difficulty === 'intermediate' ? 'badge-intermediate'
-                : 'badge-advanced';
-        return '<a href="lesson.html?id=' + l.id + '" style="text-decoration:none">'
-            + '<div class="card lesson-card card-clickable">'
-            + '  <span class="lesson-card-badge ' + b + '">' + l.difficulty + '</span>'
-            + '  <h3>' + l.title + '</h3><p>' + l.topic + '</p>'
-            + (st ? '<span class="lesson-card-status ' + sc + '">' + st + '</span>'
-                  : '<span class="lesson-card-status" style="color:var(--color-text-secondary)">Not started</span>')
-            + '</div></a>';
-        }).join('') + '</div>';
+        await startDashboard(user);
+      } catch (error) {
+        D(`Dashboard init failed: ${error.message}`, 'err');
+        document.getElementById('loadError').style.display = 'block';
+        document.getElementById('loadError').textContent = error.message;
       }
+    }
 
-      // ── Init on page load (handles already-authed sessions) ──────────────────────
-      async function initDashboard() {
-        try {
-          var user = getCurrentUser();
-          if (!user) {
-            D('initDashboard — no user, waiting for auth...', 'warn');
-            onAuthChange(async function(u) {
-              if (u) runAuthFlow(u);
-            });
-            return;
-          }
-          runAuthFlow(user);
-        } catch(err) {
-          D('initDashboard FATAL: ' + err.message, 'err');
-          console.error(err);
-          alert('Dashboard Error: ' + err.message);
-        }
-      }
+    async function startDashboard(user) {
+      D(`User logged in: ${user.uid}`, 'ok');
+      await loadProfile(user);
 
-      async function runAuthFlow(user) {
-        D('runAuthFlow — uid: ' + user.uid, 'ok');
-        document.getElementById('welcomeText').textContent = 'My Lessons';
+      const [lessons, progress] = await Promise.all([
+        loadLessons(),
+        loadProgress()
+      ]);
 
-        getUserProfile(user.uid).then(function(profile) {
-          if (profile) {
-            D('profile loaded — name=' + (profile.name || 'User'), 'ok');
-            document.getElementById('profileName').textContent  = profile.name  || 'User';
-            document.getElementById('profileEmail').textContent = user.email;
-            document.getElementById('userInitials').textContent = (profile.name || 'U').charAt(0).toUpperCase();
-          } else {
-            D('profile null — showing Learner', 'warn');
-            document.getElementById('profileName').textContent  = 'Learner';
-            document.getElementById('profileEmail').textContent = user.email;
-          }
-        }).catch(function(e) {
-          D('getUserProfile FAILED: ' + e.message, 'warn');
-          document.getElementById('profileName').textContent  = 'Learner';
-          document.getElementById('profileEmail').textContent = user.email;
-        });
+      userProgress = progress;
+      renderLessons(lessons);
 
-        var lessonsAndProgress = await Promise.all([loadLessons(), loadProgressFromFirestore()]);
-        userProgress          = normaliseProgress(lessonsAndProgress[1]);
-        D('userProgress map: ' + JSON.stringify(userProgress), 'ok');
-        renderLessons(lessonsAndProgress[0]);
-      }
+      D('Dashboard loaded successfully', 'ok');
+    }
 
-      // ── 8-second dashboard init watchdog ────────────────────────────────────
-      var _dashTimer = setTimeout(function() {
-        var u = getCurrentUser();
-        D('WATCHDOG: dashboard init timed out. auth=' + (u ? u.uid : 'null')
-          + ' progress=' + JSON.stringify(userProgress)
-          + ' lessons_rendered='
-          + (document.querySelectorAll('.lesson-card').length || 0), 'err');
-        var errEl = document.getElementById('loadError');
-        if (errEl) {
-          errEl.style.display = 'block';
-          errEl.textContent = 'Dashboard took too long to load. Check console for details, or refresh the page.';
-        }
-      }, 8000);
+    // Refresh on page show (after returning from lesson)
+    window.addEventListener('pageshow', async () => {
+      const user = getCurrentUser();
+      if (!user) return;
 
-      // ── Refresh on page visibility / back-button / lesson-complete event ─────────
-      async function refreshProgressOnShow() {
-        var user = getCurrentUser();
-        if (!user) return;
-        D('refreshProgressOnShow — pageshow / back-button / progress-updated event');
-        userProgress = normaliseProgress(await loadProgressFromFirestore());
-        var lessons  = await loadLessons();
-        renderLessons(lessons);
-      }
+      userProgress = await loadProgress();
+      const lessons = await loadLessons();
+      renderLessons(lessons);
+    });
 
-      // Kick off dashboard init (must come after all function defs)
-      initDashboard();
+    // Start the app
+    initDashboard();
+  </script>
+</body>
 
-      window.addEventListener('pageshow',            refreshProgressOnShow);
-      window.addEventListener('progress-updated',    refreshProgressOnShow);
-      window.addEventListener('storage', function(e) {
-        if (e.key && e.key.indexOf('progress_') === 0) refreshProgressOnShow();
-      });
-    </script>
-  </body>
 </html>

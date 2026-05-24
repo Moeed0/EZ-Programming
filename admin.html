@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Admin Panel - EZ Programming</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,9 +24,11 @@
   <div class="admin-container">
 
     <div class="admin-header">
+
       <h1>Lesson Management</h1>
 
       <div style="display:flex; gap:10px;">
+
         <button class="btn btn-primary" id="openAddModalBtn">
           + Add New Lesson
         </button>
@@ -33,13 +36,16 @@
         <button class="btn btn-outline" onclick="runBackfill()">
           Backfill isHidden
         </button>
+
       </div>
+
     </div>
 
     <!-- TABLE -->
     <table class="admin-table">
 
       <thead>
+
         <tr>
           <th>Order</th>
           <th>Title</th>
@@ -49,10 +55,10 @@
           <th>Visibility</th>
           <th>Actions</th>
         </tr>
+
       </thead>
 
-      <tbody id="adminLessonsTable">
-      </tbody>
+      <tbody id="adminLessonsTable"></tbody>
 
     </table>
 
@@ -69,57 +75,116 @@
 
         <input type="hidden" id="lessonId">
 
+        <!-- TITLE -->
         <div class="form-group">
-          <label class="form-label">Title</label>
+
+          <label class="form-label">
+            Title
+          </label>
 
           <input type="text" class="form-input" id="title" required>
+
         </div>
 
+        <!-- TOPIC + DIFFICULTY -->
         <div style="display:flex; gap:16px;">
 
           <div class="form-group" style="flex:1;">
-            <label class="form-label">Topic</label>
+
+            <label class="form-label">
+              Topic
+            </label>
 
             <input type="text" class="form-input" id="topic" required>
+
           </div>
 
           <div class="form-group" style="flex:1;">
-            <label class="form-label">Difficulty</label>
+
+            <label class="form-label">
+              Difficulty
+            </label>
 
             <select id="difficulty" class="form-input">
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
+
+              <option value="beginner">
+                Beginner
+              </option>
+
+              <option value="intermediate">
+                Intermediate
+              </option>
+
+              <option value="advanced">
+                Advanced
+              </option>
+
             </select>
+
           </div>
 
         </div>
 
+        <!-- ORDER -->
         <div class="form-group">
-          <label class="form-label">Order Index</label>
+
+          <label class="form-label">
+            Order Index
+          </label>
 
           <input type="number" class="form-input" id="orderIndex" min="1" required>
+
         </div>
 
+        <!-- CONTENT -->
         <div class="form-group">
-          <label class="form-label">Lesson Content</label>
 
-          <textarea class="form-input" id="content" rows="5"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Starter Code</label>
-
-          <textarea class="form-input" id="starterCode" rows="5" style="font-family:monospace;"></textarea>
-        </div>
-
-        <div class="form-group">
           <label class="form-label">
-            <input type="checkbox" id="isPublished">
-            Publish immediately
+            Lesson Content
           </label>
+
+          <textarea class="form-input" id="content" rows="6"></textarea>
+
         </div>
 
+        <!-- STARTER CODE -->
+        <div class="form-group">
+
+          <label class="form-label">
+            Starter Code
+          </label>
+
+          <textarea class="form-input" id="starterCode" rows="6" style="font-family:monospace;"></textarea>
+
+        </div>
+
+        <!-- PUBLISH OPTION -->
+        <div class="form-group">
+
+          <label class="form-label">
+
+            <input type="checkbox" id="isPublished">
+
+            Publish Lesson
+
+          </label>
+
+        </div>
+
+        <!-- HIDE OPTION -->
+        <div class="form-group">
+
+          <label class="form-label">
+
+            <input type="checkbox" id="isHidden">
+
+            Hide Lesson
+
+          </label>
+
+        </div>
+
+        <!-- ACTIONS -->
         <div class="modal-actions">
 
           <button type="button" class="btn btn-outline" id="closeModalBtn">
@@ -178,8 +243,11 @@
     onAuthChange(async (user) => {
 
       if (!user) {
+
         window.location.href = '/login.html';
+
         return;
+
       }
 
       try {
@@ -193,10 +261,13 @@
           showToast('Admin access required', 'error');
 
           setTimeout(() => {
+
             window.location.href = '/dashboard.html';
+
           }, 1500);
 
           return;
+
         }
 
         await loadAdminLessons();
@@ -224,7 +295,9 @@
         lessons = data.lessons || [];
 
         lessons.sort((a, b) => {
+
           return (a.orderIndex || 0) - (b.orderIndex || 0);
+
         });
 
         renderTable();
@@ -256,6 +329,7 @@
         `;
 
         return;
+
       }
 
       tableBody.innerHTML = lessons.map((lesson) => {
@@ -331,7 +405,7 @@
 
                 <button
                   class="btn btn-sm btn-danger"
-                  onclick="deleteLesson('${lesson.id}')"
+                  onclick="deleteLessonById('${lesson.id}')"
                 >
                   Delete
                 </button>
@@ -349,22 +423,23 @@
     }
 
     // =====================================================
-    // ADD LESSON
+    // SAVE LESSON
     // =====================================================
 
     lessonForm.addEventListener('submit', async (e) => {
 
       e.preventDefault();
 
-      const lessonId = document.getElementById('lessonId').value;
+      const lessonId =
+        document.getElementById('lessonId').value;
 
       const payload = {
 
         title:
-          document.getElementById('title').value,
+          document.getElementById('title').value.trim(),
 
         topic:
-          document.getElementById('topic').value,
+          document.getElementById('topic').value.trim(),
 
         difficulty:
           document.getElementById('difficulty').value,
@@ -379,7 +454,10 @@
           document.getElementById('starterCode').value,
 
         isPublished:
-          document.getElementById('isPublished').checked
+          document.getElementById('isPublished').checked,
+
+        isHidden:
+          document.getElementById('isHidden').checked
 
       };
 
@@ -429,7 +507,8 @@
 
       try {
 
-        const data = await apiRequest(`/api/lessons/${id}`);
+        const data =
+          await apiRequest(`/api/lessons/${id}`);
 
         const lesson = data.lesson;
 
@@ -457,6 +536,9 @@
         document.getElementById('isPublished').checked =
           !!lesson.isPublished;
 
+        document.getElementById('isHidden').checked =
+          !!lesson.isHidden;
+
         document.getElementById('modalTitle').textContent =
           'Edit Lesson';
 
@@ -476,9 +558,13 @@
     // DELETE LESSON
     // =====================================================
 
-    async function deleteLesson(id) {
+    async function deleteLessonById(id) {
 
-      if (!confirm('Delete this lesson?')) return;
+      const confirmed = confirm(
+        'Are you sure you want to permanently delete this lesson?'
+      );
+
+      if (!confirmed) return;
 
       try {
 
@@ -486,15 +572,19 @@
           method: 'DELETE'
         });
 
-        showToast('Lesson deleted', 'success');
+        lessons = lessons.filter((lesson) => {
+          return lesson.id !== id;
+        });
 
-        await loadAdminLessons();
+        renderTable();
+
+        showToast('Lesson deleted successfully', 'success');
 
       } catch (err) {
 
         console.error(err);
 
-        showToast(err.message, 'error');
+        showToast('Failed to delete lesson', 'error');
 
       }
 
@@ -538,7 +628,7 @@
       try {
 
         await apiRequest(`/api/lessons/${id}`, {
-          method: 'POST',
+          method: 'PUT',
           body: JSON.stringify({
             isHidden: value
           })
@@ -587,7 +677,7 @@
     }
 
     // =====================================================
-    // MODAL
+    // OPEN MODAL
     // =====================================================
 
     document
@@ -605,6 +695,10 @@
 
       });
 
+    // =====================================================
+    // CLOSE MODAL
+    // =====================================================
+
     document
       .getElementById('closeModalBtn')
       .addEventListener('click', () => {
@@ -614,7 +708,7 @@
       });
 
     // =====================================================
-    // HELPERS
+    // ESCAPE HTML
     // =====================================================
 
     function escapeHtml(str) {
@@ -628,16 +722,16 @@
     }
 
     // =====================================================
-    // GLOBAL EXPORTS
+    // GLOBAL FUNCTIONS
     // =====================================================
 
     window.editLesson = editLesson;
 
-    window.deleteLesson = deleteLesson;
-
     window.togglePublish = togglePublish;
 
     window.toggleHide = toggleHide;
+
+    window.deleteLessonById = deleteLessonById;
 
     window.runBackfill = runBackfill;
 
