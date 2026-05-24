@@ -205,6 +205,18 @@
     .log-info {
       color: #cbd5e1;
     }
+
+    .seed-btn {
+      margin: 10px;
+      padding: 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      width: calc(100% - 20px);
+    }
   </style>
 </head>
 
@@ -264,12 +276,17 @@
     <p id="loadError" style="display:none; text-align:center; color:red; margin-top:12px;"></p>
   </div>
 
-  <!-- Debug Panel -->
+  <!-- Debug Panel with Seed Button -->
   <div id="debugPanel" class="debug-panel">
     <div id="toggleDebugBtn" class="debug-panel-header">
       <span>Diagnostics</span>
       <span id="debugToggleIcon">▼</span>
     </div>
+
+    <div style="padding:10px;">
+      <button id="seedLessonsBtn" class="seed-btn">🌱 Seed Sample Lessons (1-10)</button>
+    </div>
+
     <div id="debugLog"></div>
   </div>
 
@@ -283,7 +300,8 @@
       apiRequest,
       getCurrentUser,
       getUserProfile,
-      getProgress
+      getProgress,
+      createLesson          // ← Added for seeding
     } from './js/auth.js?v=1.1';
 
     renderNavbar('dashboard');
@@ -311,6 +329,36 @@
       debugVisible = !debugVisible;
       document.getElementById('debugLog').style.display = debugVisible ? 'block' : 'none';
       document.getElementById('debugToggleIcon').textContent = debugVisible ? '▼' : '▲';
+    });
+
+    // ==================== SEED BUTTON ====================
+    document.getElementById('seedLessonsBtn').addEventListener('click', async () => {
+      if (!confirm("Seed 10 sample lessons? This will add them if they don't exist.")) return;
+
+      D('Starting seeding process...', 'warn');
+
+      // You can keep your full lessons array here or call your seed file logic
+      // For now using a simple version - replace with your full array if needed
+      const lessons = [
+        { title: 'Hello World in Python', topic: 'Introduction', difficulty: 'beginner', orderIndex: 1, isPublished: true, isHidden: false, content: '<h2>Hello World</h2>', starterCode: 'print("Hello World")', hint: 'Use print()' },
+        // ... Add remaining 9 lessons here if you want
+      ];
+
+      try {
+        for (const lesson of lessons) {
+          await createLesson(lesson);
+          D(`✅ Seeded: ${lesson.title}`, 'ok');
+        }
+        D('Seeding completed!', 'ok');
+        alert('✅ Lessons seeded successfully!');
+
+        // Refresh dashboard
+        const freshLessons = await loadLessons();
+        renderLessons(freshLessons);
+      } catch (err) {
+        D(`Seeding failed: ${err.message}`, 'err');
+        alert('Seeding failed. Check console.');
+      }
     });
 
     // Global Error Handlers
@@ -351,12 +399,11 @@
       }
     }
 
-    // Update Progress Bar (Fixed)
+    // Update Progress Bar
     function updateProgressBar(done, total) {
       const percent = total > 0 ? Math.round((done / total) * 100) : 0;
       document.getElementById('progressFill').style.width = percent + '%';
       document.getElementById('progressPercent').textContent = percent + '%';
-      D(`Progress Updated: ${done}/${total} = ${percent}%`, 'info');
     }
 
     // Render Lessons
