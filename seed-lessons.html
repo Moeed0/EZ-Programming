@@ -2,22 +2,28 @@
 <html>
 
 <head>
-    <title>Seed Lessons with Content</title>
+    <title>Seed Lessons with Full Content</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            padding: 30px;
             background: #f8fafc;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #1e2937;
         }
 
         button {
-            padding: 12px 24px;
-            font-size: 16px;
+            padding: 15px 30px;
+            font-size: 18px;
             background: #2563eb;
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            margin: 20px 0;
         }
 
         button:hover {
@@ -26,15 +32,18 @@
 
         #status {
             margin-top: 20px;
-            font-weight: bold;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            font-weight: 500;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Seed Lessons with Full Content</h1>
-    <button id="seedBtn">🌱 Seed All 10 Lessons with Content</button>
+    <h1>🌱 Seed All 10 Lessons with Complete Data</h1>
+    <button id="seedBtn">Seed 10 Lessons (with Content, Code & Hints)</button>
     <div id="status"></div>
 
     <script type="module">
@@ -48,11 +57,7 @@
                 orderIndex: 1,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Welcome to Python!</h2>
-          <p>Python is a popular, easy-to-learn programming language.</p>
-          <p>Let's start with the most famous first program.</p>
-        `,
+                content: `<h2>Welcome to Python!</h2><p>Python is a popular, easy-to-learn programming language used for web development, data science, automation, and more.</p><p>Let's start with the most famous first program.</p>`,
                 starterCode: `print("Hello World")`,
                 hint: 'Use the print() function to display text on the screen.'
             },
@@ -63,13 +68,9 @@
                 orderIndex: 2,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Variables and Data Types</h2>
-          <p>Variables are containers for storing data values.</p>
-          <p>Python has several built-in data types: int, float, str, bool.</p>
-        `,
-                starterCode: `name = "Abdul"\nage = 20\nis_student = True\nprint(name, age, is_student)`,
-                hint: 'Use = to assign values to variables.'
+                content: `<h2>Variables and Data Types</h2><p>Variables are containers for storing data. Python is dynamically typed, so you don't need to declare types.</p>`,
+                starterCode: `name = "Abdul"\nage = 20\nheight = 5.9\nis_student = True\nprint(name, age, height, is_student)`,
+                hint: 'Use = to assign values. Common types: str, int, float, bool.'
             },
             {
                 title: 'Conditional Statements',
@@ -78,12 +79,9 @@
                 orderIndex: 3,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Conditional Statements (if, elif, else)</h2>
-          <p>Conditionals allow your program to make decisions.</p>
-        `,
-                starterCode: `age = 18\nif age >= 18:\n    print("You are an adult")\nelse:\n    print("You are a minor")`,
-                hint: 'Use if, elif, and else keywords.'
+                content: `<h2>Conditional Statements (if, elif, else)</h2><p>Conditionals let your program make decisions based on conditions.</p>`,
+                starterCode: `score = 85\nif score >= 90:\n    print("Excellent")\nelif score >= 70:\n    print("Good")\nelse:\n    print("Needs improvement")`,
+                hint: 'Use if, elif, and else to control program flow.'
             },
             {
                 title: 'Loops - For and While',
@@ -92,12 +90,9 @@
                 orderIndex: 4,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Loops in Python</h2>
-          <p>Loops allow you to repeat code multiple times.</p>
-        `,
-                starterCode: `for i in range(5):\n    print("Count:", i)`,
-                hint: 'Use for loops with range() or while loops.'
+                content: `<h2>Loops in Python</h2><p>Loops allow you to execute code repeatedly. for loops are great for iterating over sequences.</p>`,
+                starterCode: `for i in range(1, 6):\n    print("Count:", i)`,
+                hint: 'Use range() with for loops or while for condition-based loops.'
             },
             {
                 title: 'Functions in Python',
@@ -106,11 +101,8 @@
                 orderIndex: 5,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Functions</h2>
-          <p>Functions are reusable blocks of code.</p>
-        `,
-                starterCode: `def greet(name):\n    return f"Hello, {name}!"\nprint(greet("Student"))`,
+                content: `<h2>Functions</h2><p>Functions are reusable blocks of code that perform a specific task.</p>`,
+                starterCode: `def greet(name, age):\n    return f"Hello {name}, you are {age} years old."\nprint(greet("Ali", 21))`,
                 hint: 'Define functions using the def keyword.'
             },
             {
@@ -120,12 +112,9 @@
                 orderIndex: 6,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Lists and Tuples</h2>
-          <p>Lists are mutable, tuples are immutable.</p>
-        `,
-                starterCode: `fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits)`,
-                hint: 'Use square brackets [] for lists.'
+                content: `<h2>Lists and Tuples</h2><p>Lists are mutable (can be changed), tuples are immutable.</p>`,
+                starterCode: `fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits)\nprint(len(fruits))`,
+                hint: 'Use [] for lists and () for tuples.'
             },
             {
                 title: 'Dictionaries (Key-Value)',
@@ -134,12 +123,9 @@
                 orderIndex: 7,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Dictionaries</h2>
-          <p>Dictionaries store data in key-value pairs.</p>
-        `,
-                starterCode: `student = {"name": "Ali", "age": 21, "course": "Python"}\nprint(student["name"])`,
-                hint: 'Use curly braces {} for dictionaries.'
+                content: `<h2>Dictionaries</h2><p>Dictionaries store data as key-value pairs and are very fast for lookups.</p>`,
+                starterCode: `student = {\n    "name": "Abdul",\n    "age": 22,\n    "course": "Python"\n}\nprint(student["name"])\nprint(student.get("grade", "Not assigned"))`,
+                hint: 'Use curly braces {} and key-value pairs.'
             },
             {
                 title: 'List Comprehensions',
@@ -148,11 +134,8 @@
                 orderIndex: 8,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>List Comprehensions</h2>
-          <p>A concise way to create lists.</p>
-        `,
-                starterCode: `squares = [x**2 for x in range(10)]\nprint(squares)`,
+                content: `<h2>List Comprehensions</h2><p>A concise and Pythonic way to create new lists.</p>`,
+                starterCode: `squares = [x**2 for x in range(10)]\neven_squares = [x**2 for x in range(10) if x % 2 == 0]\nprint(squares)\nprint(even_squares)`,
                 hint: 'List comprehensions are written inside square brackets.'
             },
             {
@@ -162,12 +145,9 @@
                 orderIndex: 9,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>Error Handling</h2>
-          <p>Use try and except to handle errors gracefully.</p>
-        `,
-                starterCode: `try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero!")`,
-                hint: 'Wrap risky code inside try block.'
+                content: `<h2>Error Handling</h2><p>Use try/except to handle errors gracefully without crashing the program.</p>`,
+                starterCode: `try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero!")\nexcept Exception as e:\n    print("An error occurred:", e)`,
+                hint: 'Wrap risky code in try block and handle errors in except.'
             },
             {
                 title: 'File I/O Basics',
@@ -176,31 +156,27 @@
                 orderIndex: 10,
                 isPublished: true,
                 isHidden: false,
-                content: `
-          <h2>File Input and Output</h2>
-          <p>Reading from and writing to files.</p>
-        `,
-                starterCode: `with open("test.txt", "w") as f:\n    f.write("Hello from Python!")\n\nwith open("test.txt", "r") as f:\n    print(f.read())`,
-                hint: 'Use open() function with "r" for read and "w" for write.'
+                content: `<h2>File Input and Output</h2><p>Reading from and writing to files is a fundamental skill.</p>`,
+                starterCode: `with open("sample.txt", "w") as f:\n    f.write("Hello from Python File Handling!")\n\nwith open("sample.txt", "r") as f:\n    content = f.read()\n    print(content)`,
+                hint: 'Use open() with "r" for reading and "w" for writing.'
             }
         ];
 
         document.getElementById('seedBtn').onclick = async () => {
             const statusEl = document.getElementById('status');
-            statusEl.textContent = 'Seeding lessons... Please wait.';
+            statusEl.textContent = '🌱 Seeding lessons... Please wait...';
 
             try {
                 for (const lesson of lessons) {
                     await createLesson(lesson);
                     console.log('✅ Created:', lesson.title);
-                    statusEl.textContent = `Seeded: ${lesson.title}`;
                 }
-                statusEl.textContent = '🎉 All 10 lessons seeded successfully with content!';
-                alert('All lessons have been added with full content, starter code, and hints!');
+                statusEl.innerHTML = `🎉 <strong>All 10 lessons seeded successfully with full content!</strong>`;
+                alert('✅ All 10 lessons have been successfully seeded with content, starter code, and hints!');
             } catch (error) {
                 console.error(error);
-                statusEl.textContent = '❌ Error occurred while seeding.';
-                alert('Error while seeding lessons. Check console.');
+                statusEl.textContent = `❌ Error: ${error.message}`;
+                alert('Error while seeding. Check console for details.');
             }
         };
     </script>
