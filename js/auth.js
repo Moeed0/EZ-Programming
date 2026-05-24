@@ -1,5 +1,5 @@
 // ============================================
-// Direct Firebase Firestore Access
+// auth.js - COMPLETE FIXED VERSION
 // ============================================
 
 import { auth, db } from './firebase-config.js';
@@ -126,45 +126,32 @@ export async function createUserProfileIfMissing(uid) {
 }
 
 // ============================================
-// LESSONS - FIXED QUERY
+// LESSONS - FIXED (No Composite Index Needed)
 // ============================================
 
 export async function getLessons(admin = false) {
   try {
-    let q;
-
-    if (admin) {
-      // Admin sees everything (including hidden and unpublished)
-      q = query(
-        collection(db, "lessons"),
-        orderBy("orderIndex", "asc")
-      );
-    } else {
-      // Students: Only published lessons (we'll filter hidden in JS)
-      q = query(
-        collection(db, "lessons"),
-        where("isPublished", "==", true),
-        orderBy("orderIndex", "asc")
-      );
-    }
+    // Simple query: only orderBy (avoids index issues)
+    const q = query(
+      collection(db, "lessons"),
+      orderBy("orderIndex", "asc")
+    );
 
     const snap = await getDocs(q);
-    const lessons = [];
 
-    snap.forEach((docSnap) => {
-      const data = docSnap.data();
+    let lessons = snap.docs.map(docSnap => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
 
-      // For students: skip if explicitly hidden
-      if (!admin && data.isHidden === true) {
-        return;
-      }
-
-      lessons.push({
-        id: docSnap.id,
-        ...data
+    // For students (dashboard): filter manually
+    if (!admin) {
+      lessons = lessons.filter(lesson => {
+        return lesson.isPublished === true && lesson.isHidden !== true;
       });
-    });
+    }
 
+    console.log(`✅ getLessons() returned ${lessons.length} lessons (admin=${admin})`);
     return lessons;
 
   } catch (error) {
@@ -316,7 +303,6 @@ export async function updateProgress(lessonId, status) {
       { merge: true }
     );
 
-    // Optional: trigger refresh
     try {
       localStorage.setItem('progress_updated', Date.now().toString());
     } catch (e) { }
@@ -329,7 +315,7 @@ export async function updateProgress(lessonId, status) {
 }
 
 // ============================================
-// BACKFILL isHidden FIELD (Run once)
+// BACKFILL isHidden FIELD (Run once from Admin Panel)
 // ============================================
 
 export async function backfillIsHiddenOnLessons() {
