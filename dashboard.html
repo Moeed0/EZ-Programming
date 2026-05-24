@@ -323,7 +323,7 @@
       try {
         const data = await apiRequest('/api/lessons');
         const lessons = data?.lessons || [];
-        D(`Loaded ${lessons.length} lessons`, 'ok');
+        D(`✅ Loaded ${lessons.length} lessons`, 'ok');
         return lessons;
       } catch (err) {
         D(`Failed to load lessons: ${err.message}`, 'err');
@@ -343,7 +343,7 @@
             }
           });
         }
-        D('Progress loaded successfully', 'ok');
+        D(`Progress loaded: ${Object.keys(map).length} entries`, 'ok');
         return map;
       } catch (error) {
         D(`Progress load error: ${error.message}`, 'warn');
@@ -351,11 +351,12 @@
       }
     }
 
-    // Update Progress Bar
+    // Update Progress Bar (Fixed)
     function updateProgressBar(done, total) {
       const percent = total > 0 ? Math.round((done / total) * 100) : 0;
       document.getElementById('progressFill').style.width = percent + '%';
       document.getElementById('progressPercent').textContent = percent + '%';
+      D(`Progress Updated: ${done}/${total} = ${percent}%`, 'info');
     }
 
     // Render Lessons
@@ -436,7 +437,7 @@
       }
     }
 
-    // Refresh on page show
+    // Refresh after returning from lesson
     window.addEventListener('pageshow', async () => {
       const user = getCurrentUser();
       if (user) {

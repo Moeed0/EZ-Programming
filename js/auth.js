@@ -126,12 +126,11 @@ export async function createUserProfileIfMissing(uid) {
 }
 
 // ============================================
-// LESSONS - FIXED (No Composite Index Needed)
+// LESSONS
 // ============================================
 
 export async function getLessons(admin = false) {
   try {
-    // Simple query: only orderBy (avoids index issues)
     const q = query(
       collection(db, "lessons"),
       orderBy("orderIndex", "asc")
@@ -144,11 +143,10 @@ export async function getLessons(admin = false) {
       ...docSnap.data()
     }));
 
-    // For students (dashboard): filter manually
     if (!admin) {
-      lessons = lessons.filter(lesson => {
-        return lesson.isPublished === true && lesson.isHidden !== true;
-      });
+      lessons = lessons.filter(lesson =>
+        lesson.isPublished === true && lesson.isHidden !== true
+      );
     }
 
     console.log(`✅ getLessons() returned ${lessons.length} lessons (admin=${admin})`);
@@ -183,7 +181,7 @@ export async function getLessonById(lessonId) {
 }
 
 // ============================================
-// CREATE LESSON
+// CREATE LESSON (Fixed)
 // ============================================
 
 export async function createLesson(data) {
@@ -206,7 +204,9 @@ export async function createLesson(data) {
     };
 
     const docRef = await addDoc(collection(db, "lessons"), lessonData);
+    console.log(`✅ Lesson created successfully: ${data.title} (ID: ${docRef.id})`);
     return docRef.id;
+
   } catch (error) {
     console.error("Create Lesson Error:", error);
     throw error;
@@ -214,7 +214,7 @@ export async function createLesson(data) {
 }
 
 // ============================================
-// UPDATE LESSON
+// UPDATE / HIDE / DELETE LESSON
 // ============================================
 
 export async function updateLesson(lessonId, data) {
@@ -229,10 +229,6 @@ export async function updateLesson(lessonId, data) {
   }
 }
 
-// ============================================
-// HIDE / UNHIDE LESSON
-// ============================================
-
 export async function hideLesson(lessonId, isHidden) {
   try {
     await updateDoc(doc(db, "lessons", lessonId), {
@@ -244,10 +240,6 @@ export async function hideLesson(lessonId, isHidden) {
     throw error;
   }
 }
-
-// ============================================
-// DELETE LESSON
-// ============================================
 
 export async function deleteLesson(lessonId) {
   try {
@@ -315,7 +307,7 @@ export async function updateProgress(lessonId, status) {
 }
 
 // ============================================
-// BACKFILL isHidden FIELD (Run once from Admin Panel)
+// BACKFILL
 // ============================================
 
 export async function backfillIsHiddenOnLessons() {

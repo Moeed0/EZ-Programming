@@ -2,17 +2,12 @@
 <html>
 
 <head>
-    <title>Seed Lessons with Full Content</title>
+    <title>Seed Lessons - Fixed</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 30px;
             background: #f8fafc;
-            line-height: 1.6;
-        }
-
-        h1 {
-            color: #1e2937;
         }
 
         button {
@@ -23,7 +18,6 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin: 20px 0;
         }
 
         button:hover {
@@ -35,15 +29,14 @@
             padding: 15px;
             background: #f1f5f9;
             border-radius: 8px;
-            font-weight: 500;
+            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
-
-    <h1>🌱 Seed All 10 Lessons with Complete Data</h1>
-    <button id="seedBtn">Seed 10 Lessons (with Content, Code & Hints)</button>
+    <h1>Seed Lessons with Full Content</h1>
+    <button id="seedBtn">🌱 Seed All 10 Lessons (Fixed)</button>
     <div id="status"></div>
 
     <script type="module">
@@ -162,25 +155,20 @@
             }
         ];
 
-        document.getElementById('seedBtn').onclick = async () => {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = '🌱 Seeding lessons... Please wait...';
 
-            try {
-                for (const lesson of lessons) {
-                    await createLesson(lesson);
-                    console.log('✅ Created:', lesson.title);
-                }
-                statusEl.innerHTML = `🎉 <strong>All 10 lessons seeded successfully with full content!</strong>`;
-                alert('✅ All 10 lessons have been successfully seeded with content, starter code, and hints!');
-            } catch (error) {
-                console.error(error);
-                statusEl.textContent = `❌ Error: ${error.message}`;
-                alert('Error while seeding. Check console for details.');
+
+        document.getElementById('seedBtn').onclick = async () => {
+            const status = document.getElementById('status');
+            status.textContent = 'Seeding...';
+
+            for (const lesson of lessons) {
+                await createLesson(lesson);
+                console.log('Seeded:', lesson.title);
             }
+            status.textContent = '✅ All lessons seeded successfully!';
+            alert('Seeding Complete!');
         };
     </script>
-
 </body>
 
 </html>
