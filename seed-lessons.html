@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Seed Lessons with Content</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Seed Lessons with Full Content</h1>
+    <button id="seedBtn">🌱 Seed All 10 Lessons with Content</button>
+    <div id="status"></div>
+
+    <script type="module">
+        import { createLesson } from './js/auth.js';
+
+        const lessons = [
+            {
+                title: 'Hello World in Python',
+                topic: 'Introduction',
+                difficulty: 'beginner',
+                orderIndex: 1,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Welcome to Python!</h2>
+          <p>Python is a popular, easy-to-learn programming language.</p>
+          <p>Let's start with the most famous first program.</p>
+        `,
+                starterCode: `print("Hello World")`,
+                hint: 'Use the print() function to display text on the screen.'
+            },
+            {
+                title: 'Variables and Data Types',
+                topic: 'Basics',
+                difficulty: 'beginner',
+                orderIndex: 2,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Variables and Data Types</h2>
+          <p>Variables are containers for storing data values.</p>
+          <p>Python has several built-in data types: int, float, str, bool.</p>
+        `,
+                starterCode: `name = "Abdul"\nage = 20\nis_student = True\nprint(name, age, is_student)`,
+                hint: 'Use = to assign values to variables.'
+            },
+            {
+                title: 'Conditional Statements',
+                topic: 'Control Flow',
+                difficulty: 'beginner',
+                orderIndex: 3,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Conditional Statements (if, elif, else)</h2>
+          <p>Conditionals allow your program to make decisions.</p>
+        `,
+                starterCode: `age = 18\nif age >= 18:\n    print("You are an adult")\nelse:\n    print("You are a minor")`,
+                hint: 'Use if, elif, and else keywords.'
+            },
+            {
+                title: 'Loops - For and While',
+                topic: 'Control Flow',
+                difficulty: 'intermediate',
+                orderIndex: 4,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Loops in Python</h2>
+          <p>Loops allow you to repeat code multiple times.</p>
+        `,
+                starterCode: `for i in range(5):\n    print("Count:", i)`,
+                hint: 'Use for loops with range() or while loops.'
+            },
+            {
+                title: 'Functions in Python',
+                topic: 'Functions',
+                difficulty: 'intermediate',
+                orderIndex: 5,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Functions</h2>
+          <p>Functions are reusable blocks of code.</p>
+        `,
+                starterCode: `def greet(name):\n    return f"Hello, {name}!"\nprint(greet("Student"))`,
+                hint: 'Define functions using the def keyword.'
+            },
+            {
+                title: 'Lists and Tuples',
+                topic: 'Data Structures',
+                difficulty: 'intermediate',
+                orderIndex: 6,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Lists and Tuples</h2>
+          <p>Lists are mutable, tuples are immutable.</p>
+        `,
+                starterCode: `fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits)`,
+                hint: 'Use square brackets [] for lists.'
+            },
+            {
+                title: 'Dictionaries (Key-Value)',
+                topic: 'Data Structures',
+                difficulty: 'intermediate',
+                orderIndex: 7,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Dictionaries</h2>
+          <p>Dictionaries store data in key-value pairs.</p>
+        `,
+                starterCode: `student = {"name": "Ali", "age": 21, "course": "Python"}\nprint(student["name"])`,
+                hint: 'Use curly braces {} for dictionaries.'
+            },
+            {
+                title: 'List Comprehensions',
+                topic: 'Advanced Basics',
+                difficulty: 'intermediate',
+                orderIndex: 8,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>List Comprehensions</h2>
+          <p>A concise way to create lists.</p>
+        `,
+                starterCode: `squares = [x**2 for x in range(10)]\nprint(squares)`,
+                hint: 'List comprehensions are written inside square brackets.'
+            },
+            {
+                title: 'Error Handling (Try/Except)',
+                topic: 'Error Handling',
+                difficulty: 'intermediate',
+                orderIndex: 9,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>Error Handling</h2>
+          <p>Use try and except to handle errors gracefully.</p>
+        `,
+                starterCode: `try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero!")`,
+                hint: 'Wrap risky code inside try block.'
+            },
+            {
+                title: 'File I/O Basics',
+                topic: 'File Handling',
+                difficulty: 'advanced',
+                orderIndex: 10,
+                isPublished: true,
+                isHidden: false,
+                content: `
+          <h2>File Input and Output</h2>
+          <p>Reading from and writing to files.</p>
+        `,
+                starterCode: `with open("test.txt", "w") as f:\n    f.write("Hello from Python!")\n\nwith open("test.txt", "r") as f:\n    print(f.read())`,
+                hint: 'Use open() function with "r" for read and "w" for write.'
+            }
+        ];
+
+        document.getElementById('seedBtn').onclick = async () => {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Seeding lessons... Please wait.';
+
+            try {
+                for (const lesson of lessons) {
+                    await createLesson(lesson);
+                    console.log('✅ Created:', lesson.title);
+                    statusEl.textContent = `Seeded: ${lesson.title}`;
+                }
+                statusEl.textContent = '🎉 All 10 lessons seeded successfully with content!';
+                alert('All lessons have been added with full content, starter code, and hints!');
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = '❌ Error occurred while seeding.';
+                alert('Error while seeding lessons. Check console.');
+            }
+        };
+    </script>
+
+</body>
+
+</html>
