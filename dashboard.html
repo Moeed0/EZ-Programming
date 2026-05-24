@@ -156,12 +156,13 @@
       }
     }
 
+    /* Debug Panel */
     .debug-panel {
       position: fixed;
       right: 16px;
       bottom: 16px;
       width: 340px;
-      max-height: 320px;
+      max-height: 420px;
       background: #0f172a;
       color: white;
       border-radius: 12px;
@@ -188,36 +189,19 @@
       max-height: 260px;
     }
 
-    .log-entry {
-      margin-bottom: 8px;
-      line-height: 1.4;
-      word-break: break-word;
+    .seed-btn {
+      margin: 10px;
+      padding: 10px 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
     }
 
-    .log-success {
-      color: #4ade80;
-    }
-
-    .log-error {
-      color: #f87171;
-    }
-
-    .log-warn {
-      color: #facc15;
-    }
-
-    .log-info {
-      color: #cbd5e1;
-    }
-
-    @media (max-width: 768px) {
-      .dashboard-container {
-        padding: 16px;
-      }
-
-      .debug-panel {
-        width: calc(100% - 32px);
-      }
+    .seed-btn:hover {
+      background: #1d4ed8;
     }
   </style>
 </head>
@@ -228,73 +212,29 @@
 
   <!-- Main Dashboard -->
   <div class="dashboard-container">
-
-    <!-- Header -->
     <div class="dashboard-header">
-      <div style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          width: 100%;
-          gap: 20px;
-          flex-wrap: wrap;
-        ">
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 20px; flex-wrap: wrap;">
         <div>
           <h1 id="welcomeText" style="margin-bottom: 6px;">My Lessons</h1>
-          <p class="text-secondary">
-            Browse available lessons and track your learning.
-          </p>
+          <p class="text-secondary">Browse available lessons and track your learning.</p>
         </div>
       </div>
 
       <!-- User Card -->
       <div style="display:flex; justify-content:flex-end; margin-top:20px;">
-        <div class="card" style="
-            padding: 14px 18px;
-            min-width: 260px;
-            display:flex;
-            align-items:center;
-            gap:14px;
-            background:white;
-            border:1px solid #E2E8F0;
-            border-radius:14px;
-          ">
-          <div id="userInitials" style="
-              width:48px;
-              height:48px;
-              border-radius:50%;
-              background:#2563eb;
-              color:white;
-              display:flex;
-              align-items:center;
-              justify-content:center;
-              font-weight:700;
-              font-size:1.1rem;
-            ">
-            ?
-          </div>
-
+        <div class="card"
+          style="padding: 14px 18px; min-width: 260px; display:flex; align-items:center; gap:14px; background:white; border:1px solid #E2E8F0; border-radius:14px;">
+          <div id="userInitials"
+            style="width:48px; height:48px; border-radius:50%; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.1rem;">
+            ?</div>
           <div style="overflow:hidden;">
-            <h4 id="profileName" style="
-                margin:0;
-                font-size:0.95rem;
-                white-space:nowrap;
-                overflow:hidden;
-                text-overflow:ellipsis;
-              ">
-              Loading...
-            </h4>
-
-            <p id="profileEmail" style="
-                margin:0;
-                font-size:0.78rem;
-                color:#64748b;
-                white-space:nowrap;
-                overflow:hidden;
-                text-overflow:ellipsis;
-              ">
-              ...
-            </p>
+            <h4 id="profileName"
+              style="margin:0; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              Loading...</h4>
+            <p id="profileEmail"
+              style="margin:0; font-size:0.78rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ...</p>
           </div>
         </div>
       </div>
@@ -306,7 +246,6 @@
         <span>Overall Progress</span>
         <span id="progressPercent">0%</span>
       </div>
-
       <div class="progress-bar">
         <div class="progress-fill" id="progressFill"></div>
       </div>
@@ -320,20 +259,18 @@
       </div>
     </div>
 
-    <!-- Error -->
-    <p id="loadError" style="
-        display:none;
-        text-align:center;
-        color:red;
-        margin-top:12px;
-      "></p>
+    <p id="loadError" style="display:none; text-align:center; color:red; margin-top:12px;"></p>
   </div>
 
-  <!-- Debug Panel -->
+  <!-- Debug Panel with Seed Button -->
   <div id="debugPanel" class="debug-panel">
     <div id="toggleDebugBtn" class="debug-panel-header">
       <span>Diagnostics</span>
       <span id="debugToggleIcon">▼</span>
+    </div>
+
+    <div style="padding:10px;">
+      <button id="seedLessonsBtn" class="seed-btn">🌱 Seed Sample Lessons (1-10)</button>
     </div>
 
     <div id="debugLog"></div>
@@ -353,95 +290,117 @@
       apiRequest,
       getCurrentUser,
       getUserProfile,
-      getProgress
+      getProgress,
+      createLesson   // ← Imported for seeding
     } from './js/auth.js?v=1.1';
 
     renderNavbar('dashboard');
     renderFooter();
 
+    let debugVisible = true;
+    let userProgress = {};
+
     // -----------------------------
     // DEBUG LOGGER
     // -----------------------------
-    let debugVisible = true;
-
     function D(message, type = 'info') {
       const log = document.getElementById('debugLog');
       const time = new Date().toLocaleTimeString();
 
       const div = document.createElement('div');
-      div.className = 'log-entry ' + (
-        type === 'err' ? 'log-error' :
-          type === 'warn' ? 'log-warn' :
-            type === 'ok' ? 'log-success' : 'log-info'
-      );
-
+      div.className = `log-entry ${type === 'err' ? 'log-error' : type === 'warn' ? 'log-warn' : type === 'ok' ? 'log-success' : 'log-info'}`;
       div.textContent = `[${time}] ${message}`;
 
       if (log) {
         log.prepend(div);
-        const entries = log.querySelectorAll('.log-entry');
-        if (entries.length > 80) {
-          entries[entries.length - 1].remove();
-        }
+        if (log.children.length > 80) log.lastChild.remove();
       }
       console.log('[Dashboard]', message);
     }
 
-    // Toggle debug panel
+    // Toggle Debug Panel
     document.getElementById('toggleDebugBtn').addEventListener('click', () => {
       debugVisible = !debugVisible;
       document.getElementById('debugLog').style.display = debugVisible ? 'block' : 'none';
       document.getElementById('debugToggleIcon').textContent = debugVisible ? '▼' : '▲';
     });
 
-    // Global errors
+    // Seed Lessons Button
+    document.getElementById('seedLessonsBtn').addEventListener('click', async () => {
+      if (!confirm('Seed 10 sample lessons into Firestore?')) return;
+
+      const lessons = [
+        { title: 'Hello World in Python', topic: 'Introduction', difficulty: 'beginner', orderIndex: 1, isPublished: true, isHidden: false },
+        { title: 'Variables and Data Types', topic: 'Basics', difficulty: 'beginner', orderIndex: 2, isPublished: true, isHidden: false },
+        { title: 'Conditional Statements', topic: 'Control Flow', difficulty: 'beginner', orderIndex: 3, isPublished: true, isHidden: false },
+        { title: 'Loops - For and While', topic: 'Control Flow', difficulty: 'intermediate', orderIndex: 4, isPublished: true, isHidden: false },
+        { title: 'Functions in Python', topic: 'Functions', difficulty: 'intermediate', orderIndex: 5, isPublished: true, isHidden: false },
+        { title: 'Lists and Tuples', topic: 'Data Structures', difficulty: 'intermediate', orderIndex: 6, isPublished: true, isHidden: false },
+        { title: 'Dictionaries (Key-Value)', topic: 'Data Structures', difficulty: 'intermediate', orderIndex: 7, isPublished: true, isHidden: false },
+        { title: 'List Comprehensions', topic: 'Advanced Basics', difficulty: 'intermediate', orderIndex: 8, isPublished: true, isHidden: false },
+        { title: 'Error Handling (Try/Except)', topic: 'Error Handling', difficulty: 'intermediate', orderIndex: 9, isPublished: true, isHidden: false },
+        { title: 'File I/O Basics', topic: 'File Handling', difficulty: 'advanced', orderIndex: 10, isPublished: true, isHidden: false }
+      ];
+
+      D('Starting to seed lessons...', 'warn');
+
+      try {
+        for (const lesson of lessons) {
+          await createLesson(lesson);
+          D(`✅ Created: ${lesson.title}`, 'ok');
+        }
+        D('All lessons seeded successfully!', 'ok');
+        alert('✅ 10 sample lessons have been added to Firestore!');
+
+        // Refresh dashboard
+        const freshLessons = await loadLessons();
+        renderLessons(freshLessons);
+      } catch (err) {
+        D(`❌ Seeding failed: ${err.message}`, 'err');
+        alert('Seeding failed. Check console/debug panel.');
+      }
+    });
+
+    // Global error handlers
     window.addEventListener('error', (e) => D(`ERROR: ${e.message}`, 'err'));
     window.addEventListener('unhandledrejection', (e) => D(`PROMISE ERROR: ${e.reason}`, 'err'));
 
     // -----------------------------
-    // LOAD LESSONS (Fixed - No Fallback)
+    // LOAD LESSONS
     // -----------------------------
     async function loadLessons() {
-      D('loadLessons() — calling apiRequest(/api/lessons)');
-
+      D('Loading lessons from Firestore...');
       try {
         const data = await apiRequest('/api/lessons');
         const list = data?.lessons || [];
-        D(`loadLessons() — ${list.length} lessons returned from Firestore`, 'ok');
+        D(`Loaded ${list.length} lessons`, 'ok');
         return list;
       } catch (err) {
-        D(`loadLessons FAILED: ${err.message}`, 'err');
+        D(`Failed to load lessons: ${err.message}`, 'err');
         return [];
       }
     }
 
     // -----------------------------
-    // LOAD USER PROGRESS
+    // LOAD PROGRESS
     // -----------------------------
     async function loadProgress() {
       try {
         const progress = await getProgress();
         const map = {};
-
         if (Array.isArray(progress)) {
-          progress.forEach((p) => {
-            if (p.lessonId && p.status) {
-              map[p.lessonId] = p.status;
-            }
+          progress.forEach(p => {
+            if (p.lessonId && p.status) map[p.lessonId] = p.status;
           });
         }
-
-        D('Progress loaded successfully', 'ok');
+        D('Progress loaded', 'ok');
         return map;
       } catch (error) {
-        D(`Progress error: ${error.message}`, 'warn');
+        D(`Progress load error: ${error.message}`, 'warn');
         return {};
       }
     }
 
-    // -----------------------------
-    // UPDATE PROGRESS BAR
-    // -----------------------------
     function updateProgressBar(done, total) {
       const percent = total > 0 ? Math.round((done / total) * 100) : 0;
       document.getElementById('progressFill').style.width = percent + '%';
@@ -455,115 +414,80 @@
       const container = document.getElementById('lessonsContainer');
 
       if (!lessons.length) {
-        container.innerHTML = '<p style="text-align:center; color:#64748b; padding:40px;">No lessons available yet.</p>';
+        container.innerHTML = '<p style="text-align:center; color:#64748b; padding:60px 20px;">No lessons available yet.<br><small>Click "Seed Sample Lessons" in debug panel.</small></p>';
         return;
       }
 
       const completed = Object.values(userProgress).filter(s => s === 'completed').length;
       updateProgressBar(completed, lessons.length);
 
-      container.innerHTML = `
-        <div class="lessons-grid">
-          ${lessons.map(lesson => {
+      container.innerHTML = `<div class="lessons-grid">${lessons.map(lesson => {
         const status = userProgress[lesson.id] || '';
-        let statusHTML = '';
-
-        if (status === 'completed') {
-          statusHTML = '<span class="lesson-card-status completed">Completed</span>';
-        } else if (status === 'in-progress') {
-          statusHTML = '<span class="lesson-card-status in-progress">In Progress</span>';
-        } else {
-          statusHTML = '<span class="lesson-card-status text-secondary">Not Started</span>';
-        }
+        const statusHTML = status === 'completed' ? '<span class="lesson-card-status completed">Completed</span>' :
+          status === 'in-progress' ? '<span class="lesson-card-status in-progress">In Progress</span>' :
+            '<span class="lesson-card-status text-secondary">Not Started</span>';
 
         const badgeClass = lesson.difficulty === 'beginner' ? 'badge-beginner' :
           lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
 
         return `
-              <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;">
-                <div class="lesson-card card-clickable">
-                  <span class="lesson-card-badge ${badgeClass}">
-                    ${lesson.difficulty}
-                  </span>
-                  <h3>${lesson.title}</h3>
-                  <p>${lesson.topic}</p>
-                  ${statusHTML}
-                </div>
-              </a>
-            `;
-      }).join('')}
-        </div>`;
+          <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;">
+            <div class="lesson-card card-clickable">
+              <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
+              <h3>${lesson.title}</h3>
+              <p>${lesson.topic}</p>
+              ${statusHTML}
+            </div>
+          </a>`;
+      }).join('')}</div>`;
     }
 
-    let userProgress = {};
-
-    // -----------------------------
-    // LOAD PROFILE
-    // -----------------------------
     async function loadProfile(user) {
       try {
         const profile = await getUserProfile(user.uid);
         document.getElementById('profileName').textContent = profile?.name || 'Learner';
         document.getElementById('profileEmail').textContent = user.email || '';
         document.getElementById('userInitials').textContent = (profile?.name || 'U').charAt(0).toUpperCase();
-      } catch (error) {
-        D(`Profile error: ${error.message}`, 'warn');
-        document.getElementById('profileName').textContent = 'Learner';
-        document.getElementById('profileEmail').textContent = user.email || '';
-      }
-    }
-
-    // -----------------------------
-    // MAIN INIT
-    // -----------------------------
-    async function initDashboard() {
-      try {
-        D('Initializing dashboard...');
-
-        let user = getCurrentUser();
-
-        if (!user) {
-          D('Waiting for authentication...', 'warn');
-          onAuthChange(async (u) => {
-            if (u) await startDashboard(u);
-          });
-          return;
-        }
-
-        await startDashboard(user);
-      } catch (error) {
-        D(`Dashboard init failed: ${error.message}`, 'err');
-        document.getElementById('loadError').style.display = 'block';
-        document.getElementById('loadError').textContent = error.message;
+      } catch (e) {
+        D(`Profile error: ${e.message}`, 'warn');
       }
     }
 
     async function startDashboard(user) {
-      D(`User logged in: ${user.uid}`, 'ok');
+      D(`Logged in: ${user.uid}`, 'ok');
       await loadProfile(user);
 
-      const [lessons, progress] = await Promise.all([
-        loadLessons(),
-        loadProgress()
-      ]);
-
+      const [lessons, progress] = await Promise.all([loadLessons(), loadProgress()]);
       userProgress = progress;
       renderLessons(lessons);
-
-      D('Dashboard loaded successfully', 'ok');
+      D('Dashboard ready', 'ok');
     }
 
-    // Refresh on page show (after returning from lesson)
+    async function initDashboard() {
+      try {
+        D('Initializing dashboard...');
+        const user = getCurrentUser();
+
+        if (!user) {
+          onAuthChange(async (u) => { if (u) await startDashboard(u); });
+          return;
+        }
+        await startDashboard(user);
+      } catch (error) {
+        D(`Init error: ${error.message}`, 'err');
+      }
+    }
+
     window.addEventListener('pageshow', async () => {
       const user = getCurrentUser();
-      if (!user) return;
-
-      userProgress = await loadProgress();
-      const lessons = await loadLessons();
-      renderLessons(lessons);
+      if (user) {
+        userProgress = await loadProgress();
+        const lessons = await loadLessons();
+        renderLessons(lessons);
+      }
     });
 
-    // Start the app
+    // Start
     initDashboard();
   </script>
 </body>
