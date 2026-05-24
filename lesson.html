@@ -4,9 +4,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Lesson - EZ Programming</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="css/style.css" />
 
   <style>
@@ -32,6 +34,55 @@
     .lesson-editor-panel {
       background: #020617;
       border-left: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-header {
+      padding: 14px 18px;
+      background: #111827;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .editor-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .run-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .complete-btn {
+      background: #16a34a;
+      color: white;
+    }
+
+    #editorContainer {
+      height: 500px;
+    }
+
+    #output {
+      background: #000;
+      color: #00ff88;
+      padding: 16px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      border-top: 1px solid #1e293b;
+      white-space: pre-wrap;
     }
 
     .hint-panel {
@@ -45,40 +96,148 @@
       text-align: center;
       padding: 50px;
     }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    a {
+      text-decoration: none;
+    }
   </style>
 </head>
 
 <body>
+
+  <!-- NAVBAR -->
   <div id="navbar"></div>
 
+  <!-- LESSON -->
   <div class="lesson-container">
+
+    <!-- LEFT PANEL -->
     <div class="lesson-content-panel" id="contentArea">
-      <div class="loading">Loading lesson...</div>
+
+      <div class="loading">
+        Loading lesson...
+      </div>
+
     </div>
 
+    <!-- RIGHT PANEL -->
     <div class="lesson-editor-panel">
-      <div style="padding:14px 18px; background:#111827; border-bottom:1px solid #1e293b;">
-        Python Editor
+
+      <div class="editor-header">
+
+        <div>
+          Python Editor
+        </div>
+
+        <div class="editor-actions">
+
+          <button class="editor-btn run-btn" id="runCodeBtn">
+            Run Code
+          </button>
+
+          <button class="editor-btn complete-btn" id="completeBtn">
+            Mark Complete
+          </button>
+
+        </div>
+
       </div>
-      <div id="editorContainer" style="height:500px;"></div>
+
+      <div id="editorContainer"></div>
+
+      <div id="output">
+        Ready...
+      </div>
+
     </div>
+
   </div>
 
+  <!-- MONACO -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+
+  <!-- PYODIDE -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
   <script type="module">
-    import { renderNavbar } from './js/navbar.js?v=1.1';
-    import { apiRequest, getCurrentUser, onAuthChange } from './js/auth.js?v=1.1';
+
+    import {
+      renderNavbar,
+      showToast
+    } from './js/navbar.js?v=1.1';
+
+    import {
+      apiRequest,
+      onAuthChange
+    } from './js/auth.js?v=1.1';
 
     renderNavbar('lesson');
 
-    const lessonId = new URLSearchParams(window.location.search).get('id');
+    const lessonId =
+      new URLSearchParams(window.location.search)
+        .get('id');
+
+    let editor;
+    let pyodide;
+
+    // ============================================
+    // INIT
+    // ============================================
+
+    initEditor();
 
     onAuthChange(async (user) => {
-      if (!user || !lessonId) return;
+
+      if (!user || !lessonId) {
+
+        window.location.href = '/login.html';
+
+        return;
+      }
+
       await loadLesson();
+
     });
+
+    // ============================================
+    // LOAD MONACO EDITOR
+    // ============================================
+
+    function initEditor() {
+
+      require.config({
+        paths: {
+          vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs'
+        }
+      });
+
+      require(['vs/editor/editor.main'], function () {
+
+        editor = monaco.editor.create(
+          document.getElementById('editorContainer'),
+          {
+            value: '# Loading starter code...',
+            language: 'python',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            fontSize: 15,
+            minimap: {
+              enabled: false
+            }
+          }
+        );
+
+      });
+
+    }
+
+    // ============================================
+    // LOAD LESSON
+    // ============================================
 
     async function loadLesson() {
 
@@ -88,55 +247,201 @@
           await apiRequest(`/api/lessons/${lessonId}`);
 
         if (!data?.lesson) {
-          throw new Error("Lesson not found");
+          throw new Error('Lesson not found');
         }
 
         const lesson = data.lesson;
 
         document.getElementById('contentArea').innerHTML = `
-      <a href="dashboard.html" style="color:#60a5fa;">
-        ← Back to Dashboard
-      </a>
 
-      <h1>${lesson.title}</h1>
+          <a
+            href="dashboard.html"
+            style="color:#60a5fa;"
+          >
+            ← Back to Dashboard
+          </a>
 
-      <p>
-        <strong>Topic:</strong> ${lesson.topic}
-        |
-        <strong>Difficulty:</strong> ${lesson.difficulty}
-      </p>
+          <h1>
+            ${lesson.title}
+          </h1>
 
-      <div style="margin:25px 0; line-height:1.8;">
-        ${lesson.content || '<p>No content available.</p>'}
-      </div>
+          <p>
+            <strong>Topic:</strong>
+            ${lesson.topic}
 
-      <div class="hint-panel">
-        <h3>Hint</h3>
-        <p>${lesson.hint || 'No hint available.'}</p>
-      </div>
-    `;
+            |
 
-        // Load starter code into Monaco
-        if (editor) {
-          editor.setValue(
-            lesson.starterCode || ''
-          );
-        }
+            <strong>Difficulty:</strong>
+            ${lesson.difficulty}
+          </p>
 
-        console.log("✅ Lesson loaded:", lesson);
+          <div style="margin:25px 0; line-height:1.8;">
+
+            ${lesson.content || '<p>No content available.</p>'}
+
+          </div>
+
+          <div class="hint-panel">
+
+            <h3>Hint</h3>
+
+            <p>
+              ${lesson.hint || 'No hint available.'}
+            </p>
+
+          </div>
+
+        `;
+
+        // Wait until editor exists
+        const waitForEditor = setInterval(() => {
+
+          if (editor) {
+
+            editor.setValue(
+              lesson.starterCode || ''
+            );
+
+            clearInterval(waitForEditor);
+
+          }
+
+        }, 100);
+
+        console.log('✅ Lesson loaded:', lesson);
 
       } catch (err) {
 
         console.error(err);
 
         document.getElementById('contentArea').innerHTML = `
-      <p style="color:red;">
-        Error: ${err.message}
-      </p>
-    `;
+
+          <p style="color:red;">
+
+            Error Loading Lesson:
+            ${err.message}
+
+          </p>
+
+          <a
+            href="dashboard.html"
+            style="color:#60a5fa;"
+          >
+            ← Back to Lessons
+          </a>
+
+        `;
+
       }
+
     }
+
+    // ============================================
+    // LOAD PYODIDE
+    // ============================================
+
+    async function initPyodide() {
+
+      if (pyodide) return pyodide;
+
+      document.getElementById('output').textContent =
+        'Loading Python runtime...';
+
+      pyodide = await loadPyodide();
+
+      document.getElementById('output').textContent =
+        'Python ready.';
+
+      return pyodide;
+
+    }
+
+    // ============================================
+    // RUN CODE
+    // ============================================
+
+    document
+      .getElementById('runCodeBtn')
+      .addEventListener('click', async () => {
+
+        try {
+
+          if (!editor) {
+            throw new Error('Editor not loaded');
+          }
+
+          const py = await initPyodide();
+
+          const code = editor.getValue();
+
+          let output = '';
+
+          py.setStdout({
+            batched: (text) => {
+              output += text + '\n';
+            }
+          });
+
+          py.setStderr({
+            batched: (text) => {
+              output += text + '\n';
+            }
+          });
+
+          await py.runPythonAsync(code);
+
+          document.getElementById('output').textContent =
+            output || 'Code executed successfully.';
+
+        } catch (err) {
+
+          console.error(err);
+
+          document.getElementById('output').textContent =
+            err.message;
+
+        }
+
+      });
+
+    // ============================================
+    // MARK COMPLETE
+    // ============================================
+
+    document
+      .getElementById('completeBtn')
+      .addEventListener('click', async () => {
+
+        try {
+
+          await apiRequest('/api/progress/update', {
+            method: 'POST',
+            body: JSON.stringify({
+              lessonId,
+              status: 'completed'
+            })
+          });
+
+          showToast(
+            'Lesson marked as completed',
+            'success'
+          );
+
+        } catch (err) {
+
+          console.error(err);
+
+          showToast(
+            'Failed to update progress',
+            'error'
+          );
+
+        }
+
+      });
+
   </script>
+
 </body>
 
 </html>
