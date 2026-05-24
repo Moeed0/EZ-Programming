@@ -1,465 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive Python lesson with code editor.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive Python lesson with code editor." />
   <title>Lesson - EZ Programming</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .lesson-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+    }
+
+    .lesson-content-panel {
+      padding: 30px;
+      overflow-y: auto;
+      background: #111827;
+    }
+
+    .lesson-editor-panel {
+      display: flex;
+      flex-direction: column;
+      background: #020617;
+      border-left: 1px solid #1e293b;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid #1e293b;
+      background: #111827;
+    }
+
+    .editor-toolbar-title {
+      font-weight: 600;
+    }
+
+    .editor-container {
+      flex: 1;
+      min-height: 400px;
+    }
+
+    .output-panel {
+      height: 220px;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      background: #0f172a;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .output-content {
+      padding: 15px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+      flex: 1;
+      color: #e2e8f0;
+    }
+
+    .output-content.error {
+      color: #f87171;
+    }
+
+    .output-content.success {
+      color: #4ade80;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-sm {
+      padding: 7px 12px;
+      font-size: 0.85rem;
+    }
+
+    .btn-secondary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: white;
+    }
+
+    .hint-panel {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+
+    pre {
+      background: #020617;
+      padding: 14px;
+      border-radius: 10px;
+      overflow-x: auto;
+    }
+
+    @media (max-width: 900px) {
+      .lesson-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
-  <!-- Navbar -->
   <div id="navbar"></div>
 
-  <!-- Lesson Container (split layout) -->
   <div class="lesson-container">
-    <!-- Left Panel: Lesson Content -->
-    <div class="lesson-content-panel" id="lessonContent">
-      <div class="loading-container">
+    <div class="lesson-content-panel" id="lessonContentPanel">
+      <div class="loading-container" id="loadingSpinner">
         <div class="spinner"></div>
         <p>Loading lesson...</p>
       </div>
     </div>
 
-    <!-- Right Panel: Code Editor + Output -->
     <div class="lesson-editor-panel">
-      <!-- Editor Toolbar -->
       <div class="editor-toolbar">
         <span class="editor-toolbar-title">Python Editor</span>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="display:flex; gap:10px;">
           <button class="btn btn-secondary btn-sm" id="runBtn">Run Code</button>
-          <button class="btn btn-outline btn-sm" id="resetBtn" style="color: #94A3B8; border-color: #475569;">Reset</button>
+          <button class="btn btn-outline btn-sm" id="resetBtn">Reset</button>
         </div>
       </div>
 
-      <!-- Monaco Editor Container -->
-      <div class="editor-container" id="editorContainer"></div>
+      <div id="editorContainer" class="editor-container"></div>
 
-      <!-- Output Console -->
       <div class="output-panel">
         <div class="output-header">
-          <span class="output-header-title">Output</span>
-          <button class="btn btn-sm" id="clearOutputBtn" style="background: none; color: #94A3B8; padding: 4px 8px; font-size: 0.75rem;">Clear</button>
+          <span>Output</span>
+          <button class="btn btn-outline btn-sm" id="clearOutputBtn">Clear</button>
         </div>
-        <div class="output-content" id="outputContent">Click "Run Code" to see output here...</div>
+        <div class="output-content" id="outputContent">
+          Click "Run Code" to see output here...
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Load Monaco Editor from CDN -->
+  <!-- Monaco Editor -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
-
-  <!-- Load Pyodide for Python execution -->
+  <!-- Pyodide -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
 
   <script type="module">
-    import { renderNavbar, showToast } from './js/navbar.js?v=1.0';
-    import { onAuthChange, apiRequest, getCurrentUser, updateProgress } from './js/auth.js?v=1.0';
+    import {
+      renderNavbar,
+      showToast
+    } from './js/navbar.js?v=1.1';
+
+    import {
+      apiRequest,
+      getCurrentUser,
+      onAuthChange,
+      updateProgress,
+      getProgress
+    } from './js/auth.js?v=1.1';
 
     renderNavbar('lesson');
 
-    // ---- Sample Lessons Data ----
-    const sampleLessonsData = {
-      'lesson-1': {
-        lesson: { id: 'lesson-1', title: 'Hello World in Python', topic: 'Introduction', difficulty: 'beginner' },
-        sections: [
-          {
-            heading: 'Introduction to Python',
-            content: `Python is one of the most popular programming languages in the world. It is known for being simple, readable, and powerful.\n\nIn this lesson, you will write your very first Python program — the classic "Hello, World!" program.`
-          },
-          {
-            heading: 'The print() Function',
-            content: `In Python, we use the <code>print()</code> function to display output on the screen.\n\n<pre><code>print("Hello, World!")</code></pre>\n\nThe <code>print()</code> function takes a message inside quotes and displays it. You can use either single quotes <code>'...'</code> or double quotes <code>"..."</code>.`
-          },
-          {
-            heading: 'Try It Yourself',
-            content: `Use the code editor on the right to type the following code and click "Run Code":\n\n<pre><code>print("Hello, World!")\nprint("My name is Student")\nprint("I am learning Python!")</code></pre>`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Write a program that prints "Hello, World!" to the console.',
-            starterCode: '# Write your first Python program here\n# Use the print() function to display a message\n\nprint("Hello, World!")\n',
-            hint: 'Use print() with quotes around your message. Example: print("Hello")'
-          }
-        ]
-      },
-      'lesson-2': {
-        lesson: { id: 'lesson-2', title: 'Variables and Data Types', topic: 'Basics', difficulty: 'beginner' },
-        sections: [
-          {
-            heading: 'What are Variables?',
-            content: `Variables are containers for storing data values. In Python, you create a variable by assigning a value to a name using the <code>=</code> sign.\n\n<pre><code>name = "Alice"\nage = 25\nheight = 5.6</code></pre>\n\nUnlike many other languages, Python does not require you to declare the type of a variable — it figures it out automatically.`
-          },
-          {
-            heading: 'Common Data Types',
-            content: `Python has several basic data types:\n\n<strong>String (str)</strong> - Text data in quotes: <code>"Hello"</code>\n\n<strong>Integer (int)</strong> - Whole numbers: <code>42</code>\n\n<strong>Float (float)</strong> - Decimal numbers: <code>3.14</code>\n\n<strong>Boolean (bool)</strong> - True or False: <code>True</code>\n\n<pre><code># Check the type of a variable\nx = 10\nprint(type(x))  # Output: &lt;class 'int'&gt;\n\ny = "Hello"\nprint(type(y))  # Output: &lt;class 'str'&gt;</code></pre>`
-          },
-          {
-            heading: 'Try It Yourself',
-            content: `Create variables for your name, age, and a message. Print them using the <code>print()</code> function.\n\n<pre><code>name = "Your Name"\nage = 20\nprint("My name is", name)\nprint("I am", age, "years old")</code></pre>`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Create variables and print them.',
-            starterCode: '# Create your own variables\nname = "Student"\nage = 20\ngrade = 3.5\nis_learning = True\n\n# Print them out\nprint("Name:", name)\nprint("Age:", age)\nprint("Grade:", grade)\nprint("Learning:", is_learning)\n',
-            hint: 'Use = to assign values. You can print multiple items with commas: print("Hello", name)'
-          }
-        ]
-      },
-      'lesson-3': {
-        lesson: { id: 'lesson-3', title: 'Conditional Statements', topic: 'Control Flow', difficulty: 'beginner' },
-        sections: [
-          {
-            heading: 'Making Decisions with if/else',
-            content: `Conditional statements let your program make decisions based on conditions. Python uses <code>if</code>, <code>elif</code>, and <code>else</code> keywords.\n\n<pre><code>age = 18\n\nif age >= 18:\n    print("You are an adult")\nelse:\n    print("You are a minor")</code></pre>\n\nNote: Python uses indentation (spaces) to define code blocks, not curly braces.`
-          },
-          {
-            heading: 'Comparison Operators',
-            content: `You can use these operators to compare values:\n\n<code>==</code> Equal to\n<code>!=</code> Not equal to\n<code>></code> Greater than\n<code><</code> Less than\n<code>>=</code> Greater than or equal\n<code><=</code> Less than or equal\n\n<pre><code>score = 85\n\nif score >= 90:\n    print("Grade: A")\nelif score >= 80:\n    print("Grade: B")\nelif score >= 70:\n    print("Grade: C")\nelse:\n    print("Grade: F")</code></pre>`
-          },
-          {
-            heading: 'Try It Yourself',
-            content: `Write a program that checks a student's score and prints the appropriate grade. Modify the score variable and run it multiple times to see different results.`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Write an if/elif/else program for grading.',
-            starterCode: '# Grade Calculator\nscore = 85\n\nif score >= 90:\n    print("Grade: A - Excellent!")\nelif score >= 80:\n    print("Grade: B - Good job!")\nelif score >= 70:\n    print("Grade: C - Keep trying!")\nelse:\n    print("Grade: F - Need improvement")\n\nprint("Your score:", score)\n',
-            hint: 'Remember to use colon (:) after each condition and indent the code block with spaces.'
-          }
-        ]
-      },
-      'lesson-4': {
-        lesson: { id: 'lesson-4', title: 'Loops - For and While', topic: 'Control Flow', difficulty: 'intermediate' },
-        sections: [
-          {
-            heading: 'For Loops',
-            content: `A <code>for</code> loop repeats a block of code for each item in a sequence.\n\n<pre><code># Loop through a range of numbers\nfor i in range(5):\n    print("Count:", i)\n\n# Loop through a list\nfruits = ["apple", "banana", "cherry"]\nfor fruit in fruits:\n    print(fruit)</code></pre>\n\n<code>range(5)</code> generates numbers 0, 1, 2, 3, 4.`
-          },
-          {
-            heading: 'While Loops',
-            content: `A <code>while</code> loop keeps running as long as a condition is true.\n\n<pre><code>count = 0\nwhile count < 5:\n    print("Count:", count)\n    count = count + 1\n\nprint("Done!")</code></pre>\n\nBe careful with while loops — make sure the condition will eventually become false, or your program will run forever!`
-          },
-          {
-            heading: 'Try It Yourself',
-            content: `Use a for loop to print the first 10 numbers, and a while loop to count down from 5 to 1.`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Practice using for and while loops.',
-            starterCode: '# For loop: Print numbers 1 to 10\nprint("--- For Loop ---")\nfor i in range(1, 11):\n    print(i)\n\n# While loop: Countdown\nprint("\\n--- While Loop ---")\ncount = 5\nwhile count > 0:\n    print(count)\n    count -= 1\nprint("Go!")\n',
-            hint: 'range(1, 11) gives you numbers 1 through 10. For while loops, remember to update the counter!'
-          }
-        ]
-      },
-      'lesson-5': {
-        lesson: { id: 'lesson-5', title: 'Functions in Python', topic: 'Functions', difficulty: 'intermediate' },
-        sections: [
-          {
-            heading: 'What are Functions?',
-            content: `Functions are reusable blocks of code that perform a specific task. You define a function using the <code>def</code> keyword.\n\n<pre><code>def greet(name):\n    print("Hello,", name)\n\ngreet("Alice")\ngreet("Bob")</code></pre>\n\nFunctions help organize your code and avoid repetition.`
-          },
-          {
-            heading: 'Return Values',
-            content: `Functions can return values using the <code>return</code> keyword.\n\n<pre><code>def add(a, b):\n    return a + b\n\nresult = add(3, 5)\nprint("Sum:", result)  # Output: Sum: 8</code></pre>\n\nA function without a return statement returns <code>None</code> by default.`
-          },
-          {
-            heading: 'Try It Yourself',
-            content: `Create a function that calculates the area of a rectangle and returns the result.`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Create and call your own functions.',
-            starterCode: '# Define a function to calculate rectangle area\ndef calculate_area(width, height):\n    area = width * height\n    return area\n\n# Call the function\nresult = calculate_area(5, 3)\nprint("Area:", result)\n\n# Define a greeting function\ndef say_hello(name):\n    print("Hello,", name, "! Welcome to Python.")\n\nsay_hello("Student")\n',
-            hint: 'Use def to define a function. Parameters go inside parentheses. Use return to send a value back.'
-          }
-        ]
-      },
-      'lesson-6': {
-        lesson: { id: 'lesson-6', title: 'Lists and Tuples', topic: 'Data Structures', difficulty: 'intermediate' },
-        sections: [
-          {
-            heading: 'Lists',
-            content: `Lists are used to store multiple items in a single variable. Lists are ordered and changeable.\n\n<pre><code>fruits = ["apple", "banana", "cherry"]\nprint(fruits[0])    # Output: apple\nprint(len(fruits))  # Output: 3\n\n# Add an item\nfruits.append("mango")\nprint(fruits)</code></pre>\n\nList items are accessed by their index, starting from 0.`
-          },
-          {
-            heading: 'Tuples',
-            content: `Tuples are similar to lists but they are immutable (cannot be changed after creation).\n\n<pre><code>colors = ("red", "green", "blue")\nprint(colors[0])    # Output: red\nprint(len(colors))  # Output: 3</code></pre>\n\nUse tuples when you don't want the data to be modified.`
-          },
-          {
-            heading: 'Try It Yourself',
-            content: `Create a list of your favorite things, add items, and loop through them.`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Practice with lists and tuples.',
-            starterCode: '# Create a list\nfruits = ["apple", "banana", "cherry"]\nprint("Original list:", fruits)\n\n# Add new items\nfruits.append("mango")\nfruits.append("grape")\nprint("Updated list:", fruits)\n\n# Loop through the list\nprint("\\nAll fruits:")\nfor fruit in fruits:\n    print("-", fruit)\n\n# Create a tuple\ncolors = ("red", "green", "blue")\nprint("\\nColors:", colors)\nprint("First color:", colors[0])\n',
-            hint: 'Lists use square brackets []. Tuples use parentheses (). Use .append() to add items to a list.'
-          }
-        ]
-      },
-      'lesson-7': {
-        lesson: { id: 'lesson-7', title: 'Dictionaries (Key-Value)', topic: 'Data Structures', difficulty: 'intermediate' },
-        sections: [
-          {
-            heading: 'Understanding Dictionaries',
-            content: `Dictionaries are used to store data values in key:value pairs. A dictionary is a collection which is ordered, changeable and does not allow duplicates.\n\n<pre><code>thisdict = {\n  "brand": "Ford",\n  "model": "Mustang",\n  "year": 1964\n}\nprint(thisdict["brand"])</code></pre>`
-          },
-          {
-            heading: 'Accessing and Modifying',
-            content: `You can access values by their keys and add or change them using the same syntax.\n\n<pre><code># Change value\nthisdict["year"] = 2020\n\n# Add new key\nthisdict["color"] = "red"</code></pre>`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Create a dictionary for a student and print their grade.',
-            starterCode: '# Create a student dictionary\nstudent = {\n    "name": "Moeed",\n    "age": 21,\n    "grade": "A"\n}\n\n# Print the student name and grade\nprint(student["name"], "scored a", student["grade"])\n',
-            hint: 'Access values using square brackets with the key name in quotes.'
-          }
-        ]
-      },
-      'lesson-8': {
-        lesson: { id: 'lesson-8', title: 'List Comprehensions', topic: 'Advanced Basics', difficulty: 'intermediate' },
-        sections: [
-          {
-            heading: 'Elegant Lists with Comprehension',
-            content: `List comprehension offers a shorter syntax when you want to create a new list based on the values of an existing list.\n\n<pre><code>fruits = ["apple", "banana", "cherry"]\nnewlist = [x for x in fruits if "a" in x]\nprint(newlist)</code></pre>`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Create a list of squares using list comprehension.',
-            starterCode: '# Generate squares of numbers 0 to 9\nsquares = [x**2 for x in range(10)]\nprint(squares)\n',
-            hint: 'The syntax is [expression for item in iterable].'
-          }
-        ]
-      },
-      'lesson-9': {
-        lesson: { id: 'lesson-9', title: 'Error Handling (Try/Except)', topic: 'Error Handling', difficulty: 'intermediate' },
-        sections: [
-          {
-            heading: 'Handling Exceptions',
-            content: `The <code>try</code> block lets you test a block of code for errors. The <code>except</code> block lets you handle the error.\n\n<pre><code>try:\n    print(x)\nexcept NameError:\n    print("Variable x is not defined")\nexcept:\n    print("Something else went wrong")</code></pre>`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Handle a division by zero error.',
-            starterCode: 'try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("You cannot divide by zero!")\n',
-            hint: 'Use try: followed by the risky code, then except ErrorName: for the fix.'
-          }
-        ]
-      },
-      'lesson-10': {
-        lesson: { id: 'lesson-10', title: 'File I/O Basics', topic: 'File Handling', difficulty: 'advanced' },
-        sections: [
-          {
-            heading: 'Writing and Reading Files',
-            content: `Python uses the <code>open()</code> function to handle files. Common modes are "r" (read), "w" (write), and "a" (append).\n\n<pre><code># Writing to a file\nf = open("demofile.txt", "w")\nf.write("Hello World!")\nf.close()</code></pre>`
-          }
-        ],
-        exercises: [
-          {
-            prompt: 'Simulate writing and reading a file.',
-            starterCode: '# In browser mode (Pyodide), file access is virtual\nprint("Writing... Hello Python!")\ndata = "Hello Python!"\nprint("Reading... " + data)\n',
-            hint: 'While real file I/O is limited in browsers, the logic remains the same.'
-          }
-        ]
-      }
-    };
+    const urlParams = new URLSearchParams(window.location.search);
+    const lessonId = urlParams.get('id');
 
     let editor = null;
     let pyodide = null;
-    let currentLessonId = null;
     let currentStarterCode = '';
+    let currentLesson = null;
 
-    // Get lesson ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    currentLessonId = urlParams.get('id') || 'lesson-1';
+    // ============================================
+    // AUTH & LOAD LESSON
+    // ============================================
 
-    /**
-     * Load lesson data from API or sample data
-     */
-    async function loadLesson(lessonId) {
+    onAuthChange(async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (!lessonId) {
+        showToast('Invalid lesson ID', 'error');
+        return;
+      }
+      await loadLesson();
+    });
+
+    // ============================================
+    // LOAD LESSON
+    // ============================================
+
+    async function loadLesson() {
       try {
+        document.getElementById('loadingSpinner').style.display = 'flex';
+
         const data = await apiRequest(`/api/lessons/${lessonId}`);
-        return data;
+
+        if (!data || !data.lesson) {
+          throw new Error('Lesson not found');
+        }
+
+        currentLesson = data.lesson;
+        renderLessonContent(currentLesson);
+        await syncProgress();
+
       } catch (error) {
-        console.log('Using sample lesson data');
-        return sampleLessonsData[lessonId] || sampleLessonsData['lesson-1'];
+        console.error(error);
+        document.getElementById('lessonContentPanel').innerHTML = `
+          <div style="padding:40px; text-align:center;">
+            <h2>Error Loading Lesson</h2>
+            <p>${error.message}</p>
+            <a href="dashboard.html" style="color:#3b82f6; margin-top:20px; display:inline-block;">
+              ← Back to Dashboard
+            </a>
+          </div>
+        `;
+      } finally {
+        document.getElementById('loadingSpinner').style.display = 'none';
       }
     }
 
-    /**
-     * Render lesson content in the left panel
-     */
-    function renderLessonContent(data) {
-      const contentPanel = document.getElementById('lessonContent');
-      const { lesson, sections, exercises } = data;
+    // ============================================
+    // RENDER LESSON
+    // ============================================
 
-      // Update page title
+    function renderLessonContent(lesson) {
       document.title = `${lesson.title} - EZ Programming`;
 
       let html = `
-        <div style="margin-bottom: 8px;">
-          <a href="dashboard.html" style="font-size: 0.875rem; color: var(--color-primary); font-weight: 500;">&larr; Back to Lessons</a>
-        </div>
+        <a href="dashboard.html" style="color:#3b82f6; text-decoration:none; display:inline-block; margin-bottom:20px;">
+          ← Back to Dashboard
+        </a>
+
         <h1>${lesson.title}</h1>
-        <p style="margin-bottom: 24px;">
-          <span class="lesson-card-badge badge-${lesson.difficulty === 'beginner' ? 'beginner' : lesson.difficulty === 'intermediate' ? 'intermediate' : 'advanced'}">${lesson.difficulty}</span>
-          <span style="margin-left: 8px; color: var(--color-text-secondary);">${lesson.topic}</span>
-        </p>
-      `;
+        <p><strong>Topic:</strong> ${lesson.topic} | <strong>Difficulty:</strong> ${lesson.difficulty}</p>
 
-      // Render sections
-      sections.forEach(section => {
-        html += `
-          <h2>${section.heading}</h2>
-          <div>${section.content}</div>
-        `;
-      });
+        <div style="margin-top:30px;">
+          ${lesson.content || '<p>No detailed content available yet.</p>'}
+        </div>
 
-      // Render hint panel from exercises
-      if (exercises && exercises.length > 0) {
-        const exercise = exercises[0];
-        currentStarterCode = exercise.starterCode || '';
+        <div class="hint-panel">
+          <h3>Hint</h3>
+          <p>${lesson.hint || 'No hint available.'}</p>
+        </div>
 
-        html += `
-          <div class="hint-panel" id="hintPanel">
-            <h4>Hint</h4>
-            <p>${exercise.hint || 'Try reading the lesson content carefully.'}</p>
-          </div>
-        `;
-      }
-
-      // Mark complete button (only for logged-in users)
-      html += `
-        <div style="margin-top: 24px;" id="completeSection" class="hidden">
-          <button class="btn btn-secondary" id="markCompleteBtn">Mark as Completed</button>
+        <div style="margin-top:30px;" id="completeSection">
+          <button class="btn btn-success" id="markCompleteBtn">
+            Mark as Completed
+          </button>
         </div>
       `;
 
-      contentPanel.innerHTML = html;
+      document.getElementById('lessonContentPanel').innerHTML = html;
 
-      // Show mark complete button for logged-in users
-      const user = getCurrentUser();
-      if (user) {
-        document.getElementById('completeSection').classList.remove('hidden');
-        document.getElementById('markCompleteBtn').addEventListener('click', markLessonComplete);
+      // Attach mark complete button
+      const markBtn = document.getElementById('markCompleteBtn');
+      if (markBtn) {
+        markBtn.addEventListener('click', markLessonComplete);
       }
+
+      // Set starter code
+      currentStarterCode = lesson.starterCode || 'print("Hello World")';
+      initEditor(currentStarterCode);
     }
 
-    /**
-     * Mark current lesson as completed
-     */
-    async function markLessonComplete() {
+    // ============================================
+    // SYNC PROGRESS
+    // ============================================
+
+    async function syncProgress() {
       try {
-        const markBtn = document.getElementById('markCompleteBtn');
-        markBtn.disabled = true;
-        markBtn.textContent = 'Saving...';
+        const progressData = await getProgress();
+        if (!Array.isArray(progressData)) return;
 
-        console.log('[Progress] Calling updateProgress | lesson:', currentLessonId, '→ completed');
-        await updateProgress(currentLessonId, 'completed');
+        const found = progressData.find(p => String(p.lessonId) === String(lessonId));
 
-        showToast('Lesson marked as completed!', 'success');
-        markBtn.textContent = 'Completed ✓';
-        markBtn.classList.remove('btn-secondary');
-        markBtn.classList.add('btn-success');
-
-        console.log('[Progress] updateProgress succeeded. Dispatching progress-updated event...');
-        // Wake any open dashboard tab immediately — no page refresh needed
-        window.dispatchEvent(new Event('progress-updated'));
-
-        // Also write a marker to sessionStorage so the storage-listener path fires
-        try { sessionStorage.setItem('progress_sync', Date.now()); } catch (_) {}
-      } catch (error) {
-        console.error('Progress update error:', error);
-        showToast(`Cloud sync failed: ${error.message || 'Check your internet'}`, 'info');
-        const markBtn = document.getElementById('markCompleteBtn');
-        markBtn.disabled = false;
-        markBtn.textContent = 'Mark as Complete';
+        if (found && found.status === 'completed') {
+          const btn = document.getElementById('markCompleteBtn');
+          if (btn) {
+            btn.textContent = 'Completed ✓';
+            btn.disabled = true;
+          }
+        }
+      } catch (err) {
+        console.error('Progress sync error:', err);
       }
     }
 
-    /**
-     * Initialize Monaco Editor
-     */
+    // ============================================
+    // MARK COMPLETE
+    // ============================================
+
+    async function markLessonComplete() {
+      const btn = document.getElementById('markCompleteBtn');
+      if (!btn) return;
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        await updateProgress(lessonId, 'completed');
+
+        btn.textContent = 'Completed ✓';
+        showToast('Lesson marked as completed!', 'success');
+
+      } catch (error) {
+        console.error(error);
+        btn.disabled = false;
+        btn.textContent = 'Mark as Completed';
+        showToast('Failed to save progress', 'error');
+      }
+    }
+
+    // ============================================
+    // MONACO EDITOR
+    // ============================================
+
     function initEditor(starterCode) {
       require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 
-      require(['vs/editor/editor.main'], function () {
+      window.MonacoEnvironment = {
+        getWorkerUrl: () => `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+          self.MonacoEnvironment = { baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/' };
+          importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/base/worker/workerMain.js');
+        `)}`
+      };
+
+      require(['vs/editor/editor.main'], () => {
         editor = monaco.editor.create(document.getElementById('editorContainer'), {
           value: starterCode,
           language: 'python',
           theme: 'vs-dark',
-          fontSize: 14,
-          fontFamily: "'Fira Code', 'Consolas', monospace",
-          minimap: { enabled: false },
-          lineNumbers: 'on',
-          roundedSelection: false,
-          scrollBeyondLastLine: false,
           automaticLayout: true,
-          tabSize: 4,
+          fontSize: 14,
           wordWrap: 'on',
-          padding: { top: 16, bottom: 16 }
+          minimap: { enabled: false }
         });
       });
     }
 
-    /**
-     * Initialize Pyodide for Python execution
-     */
-    async function initPyodide() {
-      try {
-        const outputEl = document.getElementById('outputContent');
-        outputEl.textContent = 'Loading Python environment (may take 30-60s)...';
-        outputEl.className = 'output-content';
+    // ============================================
+    // PYODIDE
+    // ============================================
 
-        // Fix: Use indexURL for more reliable loading
-        pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/"
-        });
-        
-        outputEl.textContent = 'Python ready. Click "Run Code" to execute.';
-        console.log('Pyodide loaded successfully');
+    async function initPyodide() {
+      const outputEl = document.getElementById('outputContent');
+      try {
+        outputEl.textContent = 'Loading Python environment...';
+        pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/' });
+        outputEl.textContent = 'Python ready ✓';
       } catch (error) {
-        console.error('Failed to load Pyodide:', error);
-        const outputEl = document.getElementById('outputContent');
-        outputEl.textContent = `Python loading error. Please check your internet or refresh. (Error: ${error.message})`;
-        outputEl.className = 'output-content error';
+        console.error(error);
+        outputEl.textContent = 'Failed to load Python environment.';
+        outputEl.classList.add('error');
       }
     }
 
-    /**
-     * Run Python code using Pyodide
-     */
-    async function runCode() {
-      if (!editor) return;
-      if (!pyodide) {
-        showToast('Python is still loading. Please wait.', 'info');
-        return;
-      }
+    // ============================================
+    // RUN CODE
+    // ============================================
 
-      const code = editor.getValue();
+    async function runCode() {
+      if (!editor || !pyodide) return;
+
       const outputEl = document.getElementById('outputContent');
       const runBtn = document.getElementById('runBtn');
 
       runBtn.disabled = true;
       runBtn.textContent = 'Running...';
-      outputEl.textContent = '';
       outputEl.className = 'output-content';
+      outputEl.textContent = '';
 
       try {
-        // Redirect stdout and stderr
+        const code = editor.getValue();
+
         pyodide.runPython(`
 import sys
 from io import StringIO
@@ -467,88 +417,50 @@ sys.stdout = StringIO()
 sys.stderr = StringIO()
         `);
 
-        // Run the user's code
-        pyodide.runPython(code);
+        await pyodide.runPythonAsync(code);
 
-        // Get output
         const stdout = pyodide.runPython('sys.stdout.getvalue()');
         const stderr = pyodide.runPython('sys.stderr.getvalue()');
 
         if (stderr) {
           outputEl.textContent = stderr;
-          outputEl.className = 'output-content error';
-        } else if (stdout) {
-          outputEl.textContent = stdout;
-          outputEl.className = 'output-content success';
+          outputEl.classList.add('error');
         } else {
-          outputEl.textContent = '(No output produced)';
+          outputEl.textContent = stdout || '(No output)';
+          outputEl.classList.add('success');
         }
-
-        // Update progress to in-progress
-        const user = getCurrentUser();
-        if (user) {
-          try {
-            await apiRequest('/api/progress/update', {
-              method: 'POST',
-              body: JSON.stringify({ lessonId: currentLessonId, status: 'in-progress' })
-            });
-          } catch (e) {
-            // Ignore progress update errors
-          }
-        }
-
       } catch (error) {
         outputEl.textContent = error.message;
-        outputEl.className = 'output-content error';
+        outputEl.classList.add('error');
       } finally {
         runBtn.disabled = false;
         runBtn.textContent = 'Run Code';
       }
     }
 
-    // ---- Event Listeners ----
+    // ============================================
+    // BUTTON EVENTS
+    // ============================================
+
     document.getElementById('runBtn').addEventListener('click', runCode);
-
     document.getElementById('resetBtn').addEventListener('click', () => {
-      if (editor && currentStarterCode) {
-        editor.setValue(currentStarterCode);
-        document.getElementById('outputContent').textContent = 'Code reset. Click "Run Code" to execute.';
-        document.getElementById('outputContent').className = 'output-content';
-      }
+      if (editor) editor.setValue(currentStarterCode);
+      document.getElementById('outputContent').textContent = 'Code reset successfully.';
     });
-
     document.getElementById('clearOutputBtn').addEventListener('click', () => {
       document.getElementById('outputContent').textContent = '';
-      document.getElementById('outputContent').className = 'output-content';
     });
 
-    // ---- Initialize ----
+    // ============================================
+    // INIT
+    // ============================================
+
     async function init() {
-      try {
-        const lessonData = await loadLesson(currentLessonId);
-        renderLessonContent(lessonData);
-
-        const starterCode = lessonData.exercises && lessonData.exercises.length > 0
-          ? lessonData.exercises[0].starterCode
-          : '# Write your Python code here\nprint("Hello, World!")\n';
-
-        initEditor(starterCode);
-        
-        // Load Pyodide last as it is heavy
-        initPyodide();
-      } catch (error) {
-        console.error('Initialization error:', error);
-        document.getElementById('lessonContent').innerHTML = `
-          <div class="text-error" style="padding: 20px;">
-            <h3>Error Loading Lesson</h3>
-            <p>${error.message}</p>
-            <a href="dashboard.html" class="btn btn-outline" style="margin-top: 16px;">Back to Lessons</a>
-          </div>
-        `;
-      }
+      await initPyodide();
     }
 
     init();
   </script>
 </body>
+
 </html>
