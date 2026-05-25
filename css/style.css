@@ -105,24 +105,35 @@ a {
 }
 
 .navbar-links a {
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-
   font-size: 0.875rem;
   font-weight: 600;
-
   transition: 0.2s;
+  display: inline-flex;
+  align-items: center;
 }
 
-.navbar-links a:hover {
+/* Plain text nav links only — not button wrappers */
+.navbar-links a:not(:has(.btn)) {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+}
+
+.navbar-links a:not(:has(.btn)):hover {
   background: #EFF6FF;
   color: var(--color-primary);
 }
 
-.navbar-links a.active {
+.navbar-links a.active:not(:has(.btn)) {
   background: #EFF6FF;
   color: var(--color-primary);
 }
+
+/* Button wrappers — strip all decoration */
+.navbar-links a:has(.btn) {
+  padding: 0;
+  background: transparent !important;
+}
+
 
 /* ============================================
    BUTTONS
@@ -1033,4 +1044,223 @@ a {
   .features-section {
     padding: 50px 20px;
   }
+}
+
+
+/* ============================================
+   DARK MODE — adapts automatically to system settings
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+
+  :root {
+    --color-bg: #0f172a;
+    --color-surface: #1e293b;
+    --color-text: #e2e8f0;
+    --color-text-secondary: #94a3b8;
+    --color-border: #334155;
+    --shadow:
+      0 1px 3px rgba(0, 0, 0, 0.3),
+      0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md:
+      0 4px 6px rgba(0, 0, 0, 0.25),
+      0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-lg:
+      0 10px 15px rgba(0, 0, 0, 0.3),
+      0 4px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Base */
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  /* Navbar */
+  .navbar {
+    background: #1e293b;
+    border-bottom-color: #334155;
+  }
+
+  .navbar-links a:not(:has(.btn)):hover,
+  .navbar-links a.active:not(:has(.btn)) {
+    background: #1d3a6e;
+    color: #93c5fd;
+  }
+
+  /* Buttons */
+  .btn-outline {
+    border-color: #93c5fd;
+    color: #93c5fd;
+  }
+  .btn-outline:hover {
+    background: #93c5fd;
+    color: #0f172a;
+  }
+
+  /* Cards */
+  .card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  /* Forms */
+  .form-input {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+  }
+  .form-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Dashboard */
+  .progress-bar-container {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .progress-bar {
+    background: #334155;
+  }
+
+  .lesson-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  .lesson-card h3 {
+    color: #e2e8f0;
+  }
+  .lesson-card p {
+    color: #94a3b8;
+  }
+
+  /* User card inline styles override */
+  .card[style*="background:white"],
+  .card[style*="background: white"] {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+  }
+
+  /* Difficulty badges — dashboard */
+  .badge-beginner     { background: #14532d; color: #86efac; }
+  .badge-intermediate { background: #451a03; color: #fcd34d; }
+  .badge-advanced     { background: #450a0a; color: #fca5a5; }
+
+  /* Status badges */
+  .status-published { background: #14532d; color: #86efac; }
+  .status-draft     { background: #450a0a; color: #fca5a5; }
+
+  /* Admin table */
+  .admin-table {
+    background: #1e293b;
+  }
+  .admin-table th {
+    background: #0f172a;
+    color: #94a3b8;
+    border-bottom-color: #334155;
+  }
+  .admin-table td {
+    border-bottom-color: #334155;
+    color: #e2e8f0;
+  }
+
+  /* Modal */
+  .modal {
+    background: #1e293b;
+    color: #e2e8f0;
+  }
+  .modal-actions {
+    background: #1e293b;
+    border-top-color: #334155;
+  }
+
+  /* Footer */
+  .footer {
+    background: #1e293b;
+    border-top-color: #334155;
+    color: #94a3b8;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #14532d22 100%);
+  }
+  .hero h1 { color: #e2e8f0; }
+  .hero p  { color: #94a3b8; }
+
+  /* Features */
+  .features-section { background: #1e293b; }
+  .feature-card {
+    background: #0f172a;
+    border-color: #334155;
+  }
+  .feature-icon { background: #1d3a6e; }
+
+  /* Lesson page — left content panel */
+  .lesson-content-panel {
+    background: #1e293b;
+    border-right-color: #334155;
+    color: #e2e8f0;
+  }
+  .lesson-content-panel h1,
+  .lesson-content-panel h2,
+  .lesson-content-panel h3,
+  .lesson-content-panel h4,
+  .lesson-content-panel strong {
+    color: #e2e8f0;
+  }
+  .lesson-content-panel p,
+  .lesson-content-panel ul,
+  .lesson-content-panel ol {
+    color: #cbd5e1;
+  }
+  .lesson-content-panel code {
+    background: #0f172a;
+    color: #7dd3fc;
+  }
+
+  /* Lesson meta badges */
+  .meta-badge.topic        { background: #1d3a6e; color: #93c5fd; border-color: #2563eb; }
+  .meta-badge.beginner     { background: #14532d; color: #86efac; border-color: #166534; }
+  .meta-badge.intermediate { background: #451a03; color: #fcd34d; border-color: #92400e; }
+  .meta-badge.advanced     { background: #450a0a; color: #fca5a5; border-color: #991b1b; }
+
+  /* Hint panel */
+  .hint-panel {
+    background: #0f172a;
+    border-color: #334155;
+  }
+  .hint-panel h3    { color: #fbbf24; }
+  .hint-panel p     { color: #cbd5e1; }
+  .hint-panel .hint-label { color: #93c5fd; }
+
+  /* Spinner (dashboard loading) */
+  .spinner {
+    border-color: #334155;
+    border-top-color: #3b82f6;
+  }
+
+  /* Back link */
+  .back-link { color: #60a5fa; }
+  .back-link:hover { color: #93c5fd; }
+
+  /* Lesson title */
+  .lesson-title { color: #e2e8f0; }
+
+  /* Lesson body text */
+  .lesson-body           { color: #cbd5e1; }
+  .lesson-body h2        { color: #e2e8f0; }
+  .lesson-body h3        { color: #e2e8f0; }
+  .lesson-body code {
+    background: #0f172a;
+    color: #7dd3fc;
+  }
+
+  /* Progress bar header text */
+  .progress-header { color: #e2e8f0; }
+  #progressPercent { color: #e2e8f0; }
+
+  /* "Not Started" status text override */
+  .lesson-card-status { color: #64748b; }
 }

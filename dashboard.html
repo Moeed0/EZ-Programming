@@ -152,71 +152,6 @@
       }
     }
 
-    .debug-panel {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      width: 340px;
-      max-height: 420px;
-      background: #0f172a;
-      color: white;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      z-index: 9999;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-    }
-
-    .debug-panel-header {
-      padding: 12px 14px;
-      background: #1e293b;
-      display: flex;
-      justify-content: space-between;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    #debugLog {
-      overflow-y: auto;
-      padding: 10px;
-      font-size: 0.8rem;
-      max-height: 260px;
-    }
-
-    .log-entry {
-      margin-bottom: 8px;
-      line-height: 1.4;
-      word-break: break-word;
-    }
-
-    .log-success {
-      color: #4ade80;
-    }
-
-    .log-error {
-      color: #f87171;
-    }
-
-    .log-warn {
-      color: #facc15;
-    }
-
-    .log-info {
-      color: #cbd5e1;
-    }
-
-    .seed-btn {
-      margin: 10px;
-      padding: 12px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      width: calc(100% - 20px);
-    }
   </style>
 </head>
 
@@ -276,23 +211,9 @@
     <p id="loadError" style="display:none; text-align:center; color:red; margin-top:12px;"></p>
   </div>
 
-  <!-- Debug Panel with Seed Button -->
-  <div id="debugPanel" class="debug-panel">
-    <div id="toggleDebugBtn" class="debug-panel-header">
-      <span>Diagnostics</span>
-      <span id="debugToggleIcon">▼</span>
-    </div>
-
-    <div style="padding:10px;">
-      <button id="seedLessonsBtn" class="seed-btn">🌱 Seed Sample Lessons (1-10)</button>
-    </div>
-
-    <div id="debugLog"></div>
-  </div>
 
   <!-- Footer -->
   <div id="footer"></div>
-
   <script type="module">
     import { renderNavbar, renderFooter } from './js/navbar.js?v=1.2';
     import {
@@ -300,85 +221,21 @@
       apiRequest,
       getCurrentUser,
       getUserProfile,
-      getProgress,
-      createLesson
+      getProgress
     } from './js/auth.js?v=1.2';
 
     renderNavbar('dashboard');
     renderFooter();
 
-    let debugVisible = true;
     let userProgress = {};
-
-    // Debug Logger
-    function D(message, type = 'info') {
-      const log = document.getElementById('debugLog');
-      const time = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.className = `log-entry ${type === 'err' ? 'log-error' : type === 'warn' ? 'log-warn' : type === 'ok' ? 'log-success' : 'log-info'}`;
-      div.textContent = `[${time}] ${message}`;
-      if (log) {
-        log.prepend(div);
-        if (log.children.length > 80) log.lastChild.remove();
-      }
-      console.log('[Dashboard]', message);
-    }
-
-    // Toggle Debug Panel
-    document.getElementById('toggleDebugBtn').addEventListener('click', () => {
-      debugVisible = !debugVisible;
-      document.getElementById('debugLog').style.display = debugVisible ? 'block' : 'none';
-      document.getElementById('debugToggleIcon').textContent = debugVisible ? '▼' : '▲';
-    });
-
-    // ==================== SEED BUTTON ====================
-    document.getElementById('seedLessonsBtn').addEventListener('click', async () => {
-      if (!confirm("Seed 10 sample lessons? This will add them to Firestore.")) return;
-      D('Starting seeding process...', 'warn');
-
-      const lessons = [
-        { title: 'Hello World in Python', topic: 'Introduction', difficulty: 'beginner', orderIndex: 1, isPublished: true, isHidden: false, content: '<h2>Welcome to Python!</h2><p>Python is a popular, easy-to-learn language used for web development, data science, and automation.</p>', starterCode: 'print("Hello World")', hint: 'Use the print() function to display text on the screen.' },
-        { title: 'Variables and Data Types', topic: 'Basics', difficulty: 'beginner', orderIndex: 2, isPublished: true, isHidden: false, content: '<h2>Variables and Data Types</h2><p>Variables store data. Python is dynamically typed - no need to declare types.</p>', starterCode: 'name = "Abdul"\nage = 20\nheight = 5.9\nis_student = True\nprint(name, age, height, is_student)', hint: 'Use = to assign. Types: str, int, float, bool.' },
-        { title: 'Conditional Statements', topic: 'Control Flow', difficulty: 'beginner', orderIndex: 3, isPublished: true, isHidden: false, content: '<h2>Conditionals (if, elif, else)</h2><p>Let your program make decisions based on conditions.</p>', starterCode: 'score = 85\nif score >= 90:\n    print("Excellent")\nelif score >= 70:\n    print("Good")\nelse:\n    print("Needs improvement")', hint: 'Use if, elif, and else to control flow.' },
-        { title: 'Loops - For and While', topic: 'Control Flow', difficulty: 'intermediate', orderIndex: 4, isPublished: true, isHidden: false, content: '<h2>Loops in Python</h2><p>Loops execute code repeatedly. for loops iterate over sequences.</p>', starterCode: 'for i in range(1, 6):\n    print("Count:", i)', hint: 'Use range() with for loops. Use while for condition-based loops.' },
-        { title: 'Functions in Python', topic: 'Functions', difficulty: 'intermediate', orderIndex: 5, isPublished: true, isHidden: false, content: '<h2>Functions</h2><p>Reusable blocks of code that perform a specific task.</p>', starterCode: 'def greet(name, age):\n    return f"Hello {name}, you are {age} years old."\nprint(greet("Ali", 21))', hint: 'Define functions with the def keyword.' },
-        { title: 'Lists and Tuples', topic: 'Data Structures', difficulty: 'intermediate', orderIndex: 6, isPublished: true, isHidden: false, content: '<h2>Lists and Tuples</h2><p>Lists are mutable (can change), tuples are immutable.</p>', starterCode: 'fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits)\nprint(len(fruits))', hint: 'Use [] for lists, () for tuples.' },
-        { title: 'Dictionaries (Key-Value)', topic: 'Data Structures', difficulty: 'intermediate', orderIndex: 7, isPublished: true, isHidden: false, content: '<h2>Dictionaries</h2><p>Store data as key-value pairs. Very fast for lookups.</p>', starterCode: 'student = {\n    "name": "Abdul",\n    "age": 22,\n    "course": "Python"\n}\nprint(student["name"])\nprint(student.get("grade", "Not assigned"))', hint: 'Use curly braces {} with key: value pairs.' },
-        { title: 'List Comprehensions', topic: 'Advanced Basics', difficulty: 'intermediate', orderIndex: 8, isPublished: true, isHidden: false, content: '<h2>List Comprehensions</h2><p>A concise, Pythonic way to create new lists.</p>', starterCode: 'squares = [x**2 for x in range(10)]\neven_squares = [x**2 for x in range(10) if x % 2 == 0]\nprint(squares)\nprint(even_squares)', hint: 'List comprehensions go inside square brackets.' },
-        { title: 'Error Handling (Try/Except)', topic: 'Error Handling', difficulty: 'intermediate', orderIndex: 9, isPublished: true, isHidden: false, content: '<h2>Error Handling</h2><p>Use try/except to handle errors without crashing.</p>', starterCode: 'try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero!")\nexcept Exception as e:\n    print("Error:", e)', hint: 'Wrap risky code in try, catch errors in except.' },
-        { title: 'File I/O Basics', topic: 'File Handling', difficulty: 'advanced', orderIndex: 10, isPublished: true, isHidden: false, content: '<h2>File Input and Output</h2><p>Reading from and writing to files is a fundamental skill.</p>', starterCode: 'with open("sample.txt", "w") as f:\n    f.write("Hello from Python!")\n\nwith open("sample.txt", "r") as f:\n    print(f.read())', hint: 'Use open() with "r" to read and "w" to write.' }
-      ];
-
-      try {
-        for (const lesson of lessons) {
-          await createLesson(lesson);
-          D(`Seeded: ${lesson.title}`, 'ok');
-        }
-        D('All 10 lessons seeded!', 'ok');
-        alert('All 10 lessons seeded successfully!');
-        userProgress = await loadProgress();
-        const freshLessons = await loadLessons();
-        renderLessons(freshLessons);
-      } catch (err) {
-        D(`Seeding failed: ${err.message}`, 'err');
-        alert('Seeding failed. Check the Diagnostics panel.');
-      }
-    });
-
-    // Global Error Handlers
-    window.addEventListener('error', (e) => D(`ERROR: ${e.message}`, 'err'));
-    window.addEventListener('unhandledrejection', (e) => D(`PROMISE ERROR: ${e.reason}`, 'err'));
 
     // Load Lessons
     async function loadLessons() {
-      D('Loading lessons from Firestore...');
       try {
         const data = await apiRequest('/api/lessons');
-        const lessons = data?.lessons || [];
-        D(`Loaded ${lessons.length} lessons`, 'ok');
-        return lessons;
+        return data?.lessons || [];
       } catch (err) {
-        D(`Failed to load lessons: ${err.message}`, 'err');
+        console.error('[Dashboard] Failed to load lessons:', err.message);
         return [];
       }
     }
@@ -390,15 +247,12 @@
         const map = {};
         if (Array.isArray(progress)) {
           progress.forEach(p => {
-            if (p.lessonId && p.status) {
-              map[p.lessonId] = p.status;
-            }
+            if (p.lessonId && p.status) map[p.lessonId] = p.status;
           });
         }
-        D(`Progress loaded: ${Object.keys(map).length} entries`, 'ok');
         return map;
-      } catch (error) {
-        D(`Progress load error: ${error.message}`, 'warn');
+      } catch (err) {
+        console.error('[Dashboard] Progress load error:', err.message);
         return {};
       }
     }
@@ -410,7 +264,6 @@
       const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
       document.getElementById('progressFill').style.width = percent + '%';
       document.getElementById('progressPercent').textContent = percent + '%';
-      D(`Progress: ${done}/${total} = ${percent}%`, 'ok');
     }
 
     // Render Lessons
@@ -418,7 +271,7 @@
       const container = document.getElementById('lessonsContainer');
 
       if (!lessons.length) {
-        container.innerHTML = `<p style="text-align:center; color:#64748b; padding:60px;">No lessons yet. Use the Seed button below.</p>`;
+        container.innerHTML = `<p style="text-align:center; color:#64748b; padding:60px;">No lessons available yet.</p>`;
         updateProgressBar([]);
         return;
       }
@@ -427,7 +280,7 @@
         <div class="lessons-grid">
           ${lessons.map(lesson => {
             const status = userProgress[lesson.id] || '';
-            let statusHTML = status === 'completed'
+            const statusHTML = status === 'completed'
               ? '<span class="lesson-card-status completed">Completed</span>'
               : status === 'in-progress'
                 ? '<span class="lesson-card-status in-progress">In Progress</span>'
@@ -460,36 +313,33 @@
         document.getElementById('profileEmail').textContent = user.email || '';
         document.getElementById('userInitials').textContent = (profile?.name || 'U').charAt(0).toUpperCase();
       } catch (e) {
-        D(`Profile error: ${e.message}`, 'warn');
+        console.error('[Dashboard] Profile error:', e.message);
       }
     }
 
     // Start Dashboard
     async function startDashboard(user) {
-      D(`User logged in: ${user.uid}`, 'ok');
       await loadProfile(user);
       const [lessons, progress] = await Promise.all([loadLessons(), loadProgress()]);
       userProgress = progress;
       renderLessons(lessons);
-      D('Dashboard ready', 'ok');
     }
 
     // Init
     async function initDashboard() {
       try {
-        D('Initializing dashboard...');
         const user = getCurrentUser();
         if (!user) {
           onAuthChange(async (u) => { if (u) await startDashboard(u); });
           return;
         }
         await startDashboard(user);
-      } catch (error) {
-        D(`Init error: ${error.message}`, 'err');
+      } catch (err) {
+        console.error('[Dashboard] Init error:', err.message);
       }
     }
 
-    // Refresh after returning from lesson
+    // Refresh progress after returning from a lesson
     window.addEventListener('pageshow', async () => {
       const user = getCurrentUser();
       if (user) {
@@ -501,6 +351,7 @@
 
     initDashboard();
   </script>
+
 </body>
 
 </html>
