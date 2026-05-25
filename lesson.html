@@ -5,270 +5,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lesson - EZ Programming</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
-
-  <style>
-    /* ── Reset & Base ── */
-    *, *::before, *::after { box-sizing: border-box; }
-
-    body { margin: 0; font-family: 'Inter', sans-serif; }
-
-    /* ── Navbar: use site default white ── */
-
-    /* ── Layout ── */
-    .lesson-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      min-height: calc(100vh - 60px);
-    }
-
-    /* ── LEFT PANEL (Content) ── */
-    .lesson-content-panel {
-      padding: 32px 36px;
-      overflow-y: auto;
-      background: #ffffff;
-      border-right: 1px solid #e2e8f0;
-    }
-
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #2563eb;
-      text-decoration: none;
-      font-size: 0.88rem;
-      font-weight: 500;
-      margin-bottom: 20px;
-      transition: color 0.2s;
-    }
-    .back-link:hover { color: #1d4ed8; }
-
-    .lesson-title {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0 0 12px;
-      line-height: 1.3;
-    }
-
-    .lesson-meta {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 28px;
-    }
-
-    .meta-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 6px;
-    }
-    .meta-badge.topic        { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-    .meta-badge.beginner     { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .meta-badge.intermediate { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    .meta-badge.advanced     { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-
-    /* Lesson content body */
-    .lesson-body {
-      font-size: 0.97rem;
-      line-height: 1.85;
-      color: #374151;
-    }
-    .lesson-body h2 {
-      font-size: 1.2rem;
-      color: #111827;
-      margin-top: 24px;
-      margin-bottom: 10px;
-      font-weight: 700;
-    }
-    .lesson-body h3 {
-      font-size: 1.05rem;
-      color: #1f2937;
-      margin-top: 20px;
-      margin-bottom: 8px;
-    }
-    .lesson-body p  { margin: 0 0 14px; }
-    .lesson-body ul, .lesson-body ol { padding-left: 20px; margin: 0 0 14px; }
-    .lesson-body li { margin-bottom: 6px; }
-    .lesson-body code {
-      background: #f1f5f9;
-      color: #0369a1;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.88em;
-      font-family: 'Courier New', monospace;
-    }
-
-    /* ── Hint Box ── */
-    .hint-panel {
-      margin-top: 28px;
-      padding: 18px 20px;
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-left: 4px solid #3b82f6;
-      border-radius: 10px;
-    }
-    .hint-panel .hint-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: #1d4ed8;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 8px;
-    }
-    .hint-panel p {
-      margin: 0;
-      color: #475569;
-      font-size: 0.93rem;
-      line-height: 1.6;
-    }
-
-    /* ── RIGHT PANEL (Editor) ── */
-    .lesson-editor-panel {
-      background: #020617;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .editor-toolbar {
-      padding: 12px 18px;
-      background: #0f172a;
-      border-bottom: 1px solid #1e293b;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .editor-label {
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: #94a3b8;
-      flex: 1;
-      letter-spacing: 0.03em;
-    }
-
-    .btn {
-      border: none;
-      padding: 8px 18px;
-      border-radius: 7px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.88rem;
-      transition: opacity 0.2s, transform 0.15s;
-    }
-    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); }
-
-    .btn-run {
-      background: #2563eb;
-      color: #fff;
-    }
-    .btn-complete {
-      background: #16a34a;
-      color: #fff;
-    }
-    .btn-complete.done {
-      background: #166534;
-      cursor: default;
-    }
-
-    #editorContainer {
-      flex: 1;
-      min-height: 380px;
-    }
-
-    #output {
-      background: #000;
-      color: #22c55e;
-      padding: 14px 18px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.88rem;
-      height: 160px;
-      overflow-y: auto;
-      border-top: 1px solid #1e293b;
-      white-space: pre-wrap;
-      line-height: 1.6;
-    }
-
-    /* ── Loading State ── */
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
-      color: #64748b;
-    }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #1e293b;
-      border-top: 3px solid #3b82f6;
-      border-radius: 50%;
-      margin: 0 auto 14px;
-      animation: spin 0.9s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      .lesson-container {
-        grid-template-columns: 1fr;
-      }
-      #editorContainer { min-height: 260px; }
-      #output { height: 120px; }
-    }
-  </style>
 </head>
 
 <body>
-  <!-- NAVBAR -->
   <div id="navbar"></div>
 
   <div class="lesson-container">
 
-    <!-- LEFT PANEL -->
+    <!-- LEFT PANEL: content -->
     <div class="lesson-content-panel" id="contentArea">
       <div class="loading">
         <div class="spinner"></div>
-        <p>Loading lesson…</p>
+        <p>Loading lesson...</p>
       </div>
     </div>
 
-    <!-- RIGHT PANEL -->
+    <!-- RIGHT PANEL: editor -->
     <div class="lesson-editor-panel">
       <div class="editor-toolbar">
         <span class="editor-label">Python Editor</span>
-        <button class="btn btn-run" id="runBtn">Run Code</button>
-        <button class="btn btn-complete" id="completeBtn">Mark Complete</button>
+        <button class="btn-run" id="runBtn">Run Code</button>
+        <button class="btn-complete" id="completeBtn">Mark Complete</button>
       </div>
       <div id="editorContainer"></div>
-      <div id="output">Output will appear here…</div>
+      <div id="output">Output will appear here...</div>
     </div>
 
   </div>
 
-  <!-- MONACO -->
+  <!-- Monaco loader -->
   <script>
     var require = { paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
 
-  <!-- PYODIDE -->
+  <!-- Pyodide -->
   <script type="module">
     import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.mjs";
     window.loadPyodide = loadPyodide;
   </script>
 
-  <!-- MAIN SCRIPT -->
+  <!-- Main -->
   <script type="module">
-    import { renderNavbar } from './js/navbar.js?v=1.2';
+    import { renderNavbar } from './js/navbar.js?v=1.3';
     import { apiRequest, updateProgress, onAuthChange, getProgress } from './js/auth.js?v=1.2';
 
     renderNavbar('lesson');
@@ -277,7 +58,7 @@
     let editor = null;
     let pyodide = null;
 
-    // ── Auth Guard ──
+    // Auth guard
     onAuthChange(async (user) => {
       if (!user || !lessonId) {
         window.location.href = 'login.html';
@@ -288,7 +69,7 @@
       await checkCompletionState();
     });
 
-    // ── Monaco ──
+    // Monaco editor
     async function initEditor() {
       return new Promise((resolve) => {
         window.require(['vs/editor/editor.main'], () => {
@@ -302,117 +83,113 @@
             scrollBeyondLastLine: false,
             lineNumbers: 'on',
             renderLineHighlight: 'all',
+            fontFamily: "'Courier New', monospace",
           });
           resolve();
         });
       });
     }
 
-    // ── Load Lesson ──
+    // Load lesson data
     async function loadLesson() {
       try {
         const data = await apiRequest(`/api/lessons/${lessonId}`);
         if (!data || !data.lesson) throw new Error('Lesson not found');
         const lesson = data.lesson;
-
-        const diffClass = lesson.difficulty || 'beginner';
+        const diff = lesson.difficulty || 'beginner';
 
         document.getElementById('contentArea').innerHTML = `
           <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
-
           <h1 class="lesson-title">${lesson.title || 'Untitled Lesson'}</h1>
-
           <div class="lesson-meta">
             <span class="meta-badge topic">${lesson.topic || 'General'}</span>
-            <span class="meta-badge ${diffClass}">${diffClass.charAt(0).toUpperCase() + diffClass.slice(1)}</span>
+            <span class="meta-badge ${diff}">${diff.charAt(0).toUpperCase() + diff.slice(1)}</span>
           </div>
-
           <div class="lesson-body">
             ${lesson.content || '<p>No content available.</p>'}
           </div>
-
           <div class="hint-panel">
             <div class="hint-label">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+              </svg>
               Hint
             </div>
             <p>${lesson.hint || 'No hint available.'}</p>
           </div>
         `;
 
-        if (editor) {
-          editor.setValue(lesson.starterCode || '');
-        }
+        if (editor) editor.setValue(lesson.starterCode || '');
       } catch (err) {
         document.getElementById('contentArea').innerHTML = `
-          <a class="back-link" href="dashboard.html">← Back to Lessons</a>
-          <p style="color:#f87171; margin-top:20px;">Error loading lesson: ${err.message}</p>
+          <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+          <p style="color:#F87171; margin-top:20px;">Error loading lesson: ${err.message}</p>
         `;
       }
     }
 
-    // ── Check if already completed ──
+    // Check completion
     async function checkCompletionState() {
       try {
         const progress = await getProgress();
         const record = progress.find(p => p.lessonId === lessonId);
-        if (record && record.status === 'completed') {
+        if (record?.status === 'completed') {
           const btn = document.getElementById('completeBtn');
-          btn.textContent = '✓ Completed';
+          btn.textContent = 'Completed';
           btn.classList.add('done');
           btn.disabled = true;
         }
-      } catch (e) { /* silent */ }
+      } catch { /* silent */ }
     }
 
-    // ── Pyodide ──
+    // Pyodide runtime
     async function initPyodideRuntime() {
       if (pyodide) return pyodide;
-      document.getElementById('output').textContent = 'Loading Python runtime…';
+      document.getElementById('output').textContent = 'Loading Python runtime...';
       pyodide = await window.loadPyodide();
       document.getElementById('output').textContent = 'Python ready. Click Run Code.';
       return pyodide;
     }
 
-    // ── Run Code ──
+    // Run code
     document.getElementById('runBtn').addEventListener('click', async () => {
-      const runBtn = document.getElementById('runBtn');
-      runBtn.textContent = 'Running…';
-      runBtn.disabled = true;
+      const btn = document.getElementById('runBtn');
+      btn.textContent = 'Running...';
+      btn.disabled = true;
       try {
         const py = await initPyodideRuntime();
         const code = editor.getValue();
         let output = '';
-        py.setStdout({ batched: (text) => { output += text + '\n'; } });
-        py.setStderr({ batched: (text) => { output += 'Error: ' + text + '\n'; } });
+        py.setStdout({ batched: t => { output += t + '\n'; } });
+        py.setStderr({ batched: t => { output += 'Error: ' + t + '\n'; } });
         await py.runPythonAsync(code);
         document.getElementById('output').textContent = output.trim() || '(no output)';
       } catch (err) {
         document.getElementById('output').textContent = 'Error: ' + String(err);
       } finally {
-        runBtn.textContent = 'Run Code';
-        runBtn.disabled = false;
+        btn.textContent = 'Run Code';
+        btn.disabled = false;
       }
     });
 
-    // ── Mark Complete ──
+    // Mark complete
     document.getElementById('completeBtn').addEventListener('click', async () => {
       const btn = document.getElementById('completeBtn');
       if (btn.disabled) return;
       try {
-        btn.textContent = 'Saving…';
+        btn.textContent = 'Saving...';
         btn.disabled = true;
         await updateProgress(lessonId, 'completed');
-        btn.textContent = '✓ Completed';
+        btn.textContent = 'Completed';
         btn.classList.add('done');
-        // Small visual confirmation
         const out = document.getElementById('output');
         out.textContent = 'Lesson marked as complete! Well done.';
-        out.style.color = '#4ade80';
+        out.style.color = '#4ADE80';
       } catch (err) {
         btn.textContent = 'Mark Complete';
         btn.disabled = false;
-        document.getElementById('output').textContent = 'Failed to save progress: ' + err.message;
+        document.getElementById('output').textContent = 'Failed to save: ' + err.message;
       }
     });
   </script>

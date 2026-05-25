@@ -1,190 +1,32 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Your learning dashboard - browse lessons and track progress." />
-
   <title>Dashboard - EZ Programming</title>
-
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-
-  <!-- Main CSS -->
   <link rel="stylesheet" href="css/style.css" />
-
-  <style>
-    .dashboard-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-
-    .dashboard-header {
-      margin-bottom: 24px;
-    }
-
-    .text-secondary {
-      color: #64748b;
-    }
-
-    .progress-bar-container {
-      background: white;
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 30px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 12px;
-      background: #e2e8f0;
-      border-radius: 999px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: #2563eb;
-      transition: width 0.3s ease;
-    }
-
-    .lessons-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
-
-    .lesson-card {
-      padding: 20px;
-      border-radius: 14px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      transition: 0.25s ease;
-      height: 100%;
-    }
-
-    .lesson-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    }
-
-    .lesson-card h3 {
-      margin: 14px 0 10px;
-      color: #0f172a;
-    }
-
-    .lesson-card p {
-      color: #64748b;
-      font-size: 0.95rem;
-      margin-bottom: 14px;
-    }
-
-    .lesson-card-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: capitalize;
-    }
-
-    .badge-beginner {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .badge-intermediate {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .badge-advanced {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .lesson-card-status {
-      display: inline-block;
-      margin-top: 10px;
-      font-size: 0.82rem;
-      font-weight: 700;
-    }
-
-    .completed {
-      color: #16a34a;
-    }
-
-    .in-progress {
-      color: #2563eb;
-    }
-
-    .loading-container {
-      text-align: center;
-      padding: 50px 20px;
-    }
-
-    .spinner {
-      width: 42px;
-      height: 42px;
-      border: 4px solid #e2e8f0;
-      border-top: 4px solid #2563eb;
-      border-radius: 50%;
-      margin: 0 auto 16px;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-  </style>
 </head>
 
 <body>
-  <!-- Navbar -->
   <div id="navbar"></div>
 
-  <!-- Main Dashboard -->
   <div class="dashboard-container">
-    <div class="dashboard-header">
-      <div
-        style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 20px; flex-wrap: wrap;">
-        <div>
-          <h1 id="welcomeText" style="margin-bottom: 6px;">My Lessons</h1>
-          <p class="text-secondary">Browse available lessons and track your learning.</p>
-        </div>
-      </div>
 
-      <!-- User Card -->
-      <div style="display:flex; justify-content:flex-end; margin-top:20px;">
-        <div class="card"
-          style="padding: 14px 18px; min-width: 260px; display:flex; align-items:center; gap:14px; background:white; border:1px solid #E2E8F0; border-radius:14px;">
-          <div id="userInitials"
-            style="width:48px; height:48px; border-radius:50%; background:#2563eb; color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.1rem;">
-            ?</div>
-          <div style="overflow:hidden;">
-            <h4 id="profileName"
-              style="margin:0; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              Loading...</h4>
-            <p id="profileEmail"
-              style="margin:0; font-size:0.78rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ...</p>
-          </div>
+    <!-- Header row: title + user card -->
+    <div class="dash-toprow">
+      <div>
+        <h1 class="dash-title">My Lessons</h1>
+        <p class="dash-subtitle">Browse available lessons and track your learning.</p>
+      </div>
+      <div class="user-profile-card">
+        <div class="user-avatar" id="userInitials">?</div>
+        <div class="user-info">
+          <div class="user-name" id="profileName">Loading...</div>
+          <div class="user-email" id="profileEmail">...</div>
         </div>
       </div>
     </div>
@@ -196,11 +38,11 @@
         <span id="progressPercent">0%</span>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
       </div>
     </div>
 
-    <!-- Lessons -->
+    <!-- Lessons grid -->
     <div id="lessonsContainer">
       <div class="loading-container">
         <div class="spinner"></div>
@@ -208,14 +50,12 @@
       </div>
     </div>
 
-    <p id="loadError" style="display:none; text-align:center; color:red; margin-top:12px;"></p>
   </div>
 
-
-  <!-- Footer -->
   <div id="footer"></div>
+
   <script type="module">
-    import { renderNavbar, renderFooter } from './js/navbar.js?v=1.2';
+    import { renderNavbar, renderFooter } from './js/navbar.js?v=1.3';
     import {
       onAuthChange,
       apiRequest,
@@ -229,83 +69,76 @@
 
     let userProgress = {};
 
-    // Load Lessons
     async function loadLessons() {
       try {
         const data = await apiRequest('/api/lessons');
         return data?.lessons || [];
       } catch (err) {
-        console.error('[Dashboard] Failed to load lessons:', err.message);
+        console.error('[Dashboard] loadLessons:', err.message);
         return [];
       }
     }
 
-    // Load Progress
     async function loadProgress() {
       try {
         const progress = await getProgress();
         const map = {};
         if (Array.isArray(progress)) {
-          progress.forEach(p => {
-            if (p.lessonId && p.status) map[p.lessonId] = p.status;
-          });
+          progress.forEach(p => { if (p.lessonId && p.status) map[p.lessonId] = p.status; });
         }
         return map;
       } catch (err) {
-        console.error('[Dashboard] Progress load error:', err.message);
+        console.error('[Dashboard] loadProgress:', err.message);
         return {};
       }
     }
 
-    // Update Progress Bar
     function updateProgressBar(lessons) {
       const total = lessons.length;
-      const done = lessons.filter(l => userProgress[l.id] === 'completed').length;
-      const percent = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
-      document.getElementById('progressFill').style.width = percent + '%';
-      document.getElementById('progressPercent').textContent = percent + '%';
+      const done  = lessons.filter(l => userProgress[l.id] === 'completed').length;
+      const pct   = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('progressPercent').textContent = pct + '%';
     }
 
-    // Render Lessons
     function renderLessons(lessons) {
       const container = document.getElementById('lessonsContainer');
 
       if (!lessons.length) {
-        container.innerHTML = `<p style="text-align:center; color:#64748b; padding:60px;">No lessons available yet.</p>`;
+        container.innerHTML = '<p class="no-lessons">No lessons available yet.</p>';
         updateProgressBar([]);
         return;
       }
 
-      container.innerHTML = `
-        <div class="lessons-grid">
-          ${lessons.map(lesson => {
-            const status = userProgress[lesson.id] || '';
-            const statusHTML = status === 'completed'
+      container.innerHTML = `<div class="lessons-grid">${
+        lessons.map(lesson => {
+          const status = userProgress[lesson.id] || '';
+          const statusHTML =
+            status === 'completed'
               ? '<span class="lesson-card-status completed">Completed</span>'
               : status === 'in-progress'
                 ? '<span class="lesson-card-status in-progress">In Progress</span>'
-                : '<span class="lesson-card-status" style="color:#94a3b8;">Not Started</span>';
+                : '<span class="lesson-card-status" style="color:var(--color-text-muted)">Not Started</span>';
 
-            const badgeClass = lesson.difficulty === 'beginner' ? 'badge-beginner' :
-              lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
+          const badgeClass =
+            lesson.difficulty === 'beginner'     ? 'badge-beginner' :
+            lesson.difficulty === 'intermediate' ? 'badge-intermediate' : 'badge-advanced';
 
-            return `
-              <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;">
-                <div class="lesson-card">
-                  <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
-                  <h3>${lesson.title}</h3>
-                  <p>${lesson.topic}</p>
-                  ${statusHTML}
-                </div>
-              </a>
-            `;
-          }).join('')}
-        </div>`;
+          return `
+            <a href="lesson.html?id=${lesson.id}" style="text-decoration:none;display:block;">
+              <div class="lesson-card">
+                <span class="lesson-card-badge ${badgeClass}">${lesson.difficulty}</span>
+                <h3>${lesson.title}</h3>
+                <p>${lesson.topic}</p>
+                ${statusHTML}
+              </div>
+            </a>`;
+        }).join('')
+      }</div>`;
 
       updateProgressBar(lessons);
     }
 
-    // Load Profile
     async function loadProfile(user) {
       try {
         const profile = await getUserProfile(user.uid);
@@ -313,11 +146,10 @@
         document.getElementById('profileEmail').textContent = user.email || '';
         document.getElementById('userInitials').textContent = (profile?.name || 'U').charAt(0).toUpperCase();
       } catch (e) {
-        console.error('[Dashboard] Profile error:', e.message);
+        console.error('[Dashboard] loadProfile:', e.message);
       }
     }
 
-    // Start Dashboard
     async function startDashboard(user) {
       await loadProfile(user);
       const [lessons, progress] = await Promise.all([loadLessons(), loadProgress()]);
@@ -325,21 +157,19 @@
       renderLessons(lessons);
     }
 
-    // Init
     async function initDashboard() {
       try {
         const user = getCurrentUser();
         if (!user) {
-          onAuthChange(async (u) => { if (u) await startDashboard(u); });
+          onAuthChange(async u => { if (u) await startDashboard(u); });
           return;
         }
         await startDashboard(user);
       } catch (err) {
-        console.error('[Dashboard] Init error:', err.message);
+        console.error('[Dashboard] init:', err.message);
       }
     }
 
-    // Refresh progress after returning from a lesson
     window.addEventListener('pageshow', async () => {
       const user = getCurrentUser();
       if (user) {
@@ -352,6 +182,36 @@
     initDashboard();
   </script>
 
+  <style>
+    /* Dashboard-specific styles */
+    .dash-toprow {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .dash-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--color-text);
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+
+    .dash-subtitle {
+      color: var(--color-text-secondary);
+      font-size: 0.95rem;
+    }
+
+    .no-lessons {
+      text-align: center;
+      color: var(--color-text-muted);
+      padding: 60px 20px;
+    }
+  </style>
 </body>
 
 </html>

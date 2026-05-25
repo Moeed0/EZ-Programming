@@ -4,6 +4,14 @@
 import { onAuthChange, logoutUser, getUserProfile } from './auth.js';
 import { getCurrentUser } from './auth.js';
 
+// ── Theme bootstrap (runs immediately, before paint) ──
+(function () {
+  const saved = localStorage.getItem('ez-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+
 // ============================================
 // renderNavbar()
 // ============================================
@@ -15,40 +23,56 @@ export function renderNavbar(activePage = '') {
     <nav class="navbar">
       <a href="index.html" class="navbar-brand">EZ Programming</a>
 
+      <div class="navbar-links" id="navLinks">
+        <a href="index.html" class="nav-link ${activePage === 'home' ? 'active' : ''}">Home</a>
+        <a href="dashboard.html" class="nav-link ${activePage === 'dashboard' ? 'active' : ''}" id="navDashboard">Lessons</a>
+        <a href="login.html" class="nav-link ${activePage === 'login' ? 'active' : ''}" id="navLogin">Login</a>
+        <a href="signup.html" class="nav-link ${activePage === 'signup' ? 'active' : ''}" id="navSignup">Sign Up</a>
+        <a href="admin.html" class="nav-link hidden" id="navAdmin">Admin</a>
+        <a href="#" class="nav-link nav-logout hidden" id="navLogout">Logout</a>
+
+        <div class="nav-divider"></div>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
-
-      <div class="navbar-links" id="navLinks">
-        <a href="index.html" class="${activePage === 'home' ? 'active' : ''}">Home</a>
-        <a href="dashboard.html" class="${activePage === 'dashboard' ? 'active' : ''}" id="navDashboard">Lessons</a>
-        <a href="login.html" class="${activePage === 'login' ? 'active' : ''}" id="navLogin">Login</a>
-        <a href="signup.html" id="navSignup">
-          <button class="btn btn-primary btn-sm">Sign Up</button>
-        </a>
-        <!-- Admin link is injected after role check (see onAuthChange below) -->
-        <a href="admin.html" id="navAdmin" class="hidden">
-          <button class="btn btn-outline btn-sm">Admin</button>
-        </a>
-        <a href="#" id="navLogout" class="hidden">
-          <button class="btn btn-outline btn-sm">Logout</button>
-        </a>
-      </div>
     </nav>
   `;
+
+  // ── Theme toggle logic ──
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('ez-theme', next);
+    });
+  }
 
   // Mobile menu toggle
   const toggle = document.getElementById('navToggle');
   const links = document.getElementById('navLinks');
   if (toggle && links) {
-    toggle.addEventListener('click', () => {
-      links.classList.toggle('open');
-    });
+    toggle.addEventListener('click', () => links.classList.toggle('open'));
   }
 
-  // Listen for auth state to toggle login/logout links and Admin button
+  // Auth state → show/hide nav links
   onAuthChange(async (user) => {
     const navLogin     = document.getElementById('navLogin');
     const navSignup    = document.getElementById('navSignup');
@@ -57,86 +81,66 @@ export function renderNavbar(activePage = '') {
     const navAdmin     = document.getElementById('navAdmin');
 
     if (user) {
-      // User is logged in
-      if (navLogin)     navLogin.classList.add('hidden');
-      if (navSignup)    navSignup.classList.add('hidden');
-      if (navLogout)    navLogout.classList.remove('hidden');
-      if (navDashboard) navDashboard.classList.remove('hidden');
+      navLogin?.classList.add('hidden');
+      navSignup?.classList.add('hidden');
+      navLogout?.classList.remove('hidden');
+      navDashboard?.classList.remove('hidden');
 
-      // Fetch profile to determine admin status
       try {
         const profile = await getUserProfile(user.uid);
-        const isAdmin = (profile && profile.role === 'admin');
-        if (navAdmin) {
-          navAdmin.classList.toggle('hidden', !isAdmin);
-        }
-      } catch (err) {
-        if (navAdmin) navAdmin.classList.add('hidden');
+        const isAdmin = profile?.role === 'admin';
+        if (navAdmin) navAdmin.classList.toggle('hidden', !isAdmin);
+      } catch {
+        navAdmin?.classList.add('hidden');
       }
     } else {
-      // User is logged out
-      if (navLogin)     navLogin.classList.remove('hidden');
-      if (navSignup)    navSignup.classList.remove('hidden');
-      if (navLogout)    navLogout.classList.add('hidden');
-      if (navAdmin)     navAdmin.classList.add('hidden');
+      navLogin?.classList.remove('hidden');
+      navSignup?.classList.remove('hidden');
+      navLogout?.classList.add('hidden');
+      navAdmin?.classList.add('hidden');
     }
   });
 
-  // Logout button handler
-  const logoutBtn = document.getElementById('navLogout');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      try {
-        await logoutUser();
-        window.location.href = 'index.html';
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
-    });
-  }
+  // Logout handler
+  document.getElementById('navLogout')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      await logoutUser();
+      window.location.href = 'index.html';
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
+  });
 }
 
-/**
- * Render the footer into the page
- */
+// ============================================
+// renderFooter()
+// ============================================
 export function renderFooter() {
-  const footerContainer = document.getElementById('footer');
-  if (!footerContainer) return;
-
-  footerContainer.innerHTML = `
+  const el = document.getElementById('footer');
+  if (!el) return;
+  el.innerHTML = `
     <footer class="footer">
-      <div class="footer-content">
-        <span class="footer-text">2026 EZ Programming</span>
-        <div class="footer-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Contact</a>
-        </div>
+      <span>2026 EZ Programming</span>
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Contact</a>
       </div>
     </footer>
   `;
 }
 
-/**
- * Show a toast notification
- */
+// ============================================
+// showToast()
+// ============================================
 export function showToast(message, type = 'info') {
-  // Remove any existing toasts
-  const existingToast = document.querySelector('.toast');
-  if (existingToast) existingToast.remove();
-
+  document.querySelector('.toast')?.remove();
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
   document.body.appendChild(toast);
-
-  // Trigger show animation
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
-
-  // Auto-hide after 3 seconds
+  requestAnimationFrame(() => toast.classList.add('show'));
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
