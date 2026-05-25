@@ -4,14 +4,6 @@
 import { onAuthChange, logoutUser, getUserProfile } from './auth.js';
 import { getCurrentUser } from './auth.js';
 
-// ── Theme bootstrap (runs immediately, before paint) ──
-(function () {
-  const saved = localStorage.getItem('ez-theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved || (prefersDark ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', theme);
-})();
-
 // ============================================
 // renderNavbar()
 // ============================================

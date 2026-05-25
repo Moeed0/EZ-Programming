@@ -1,20 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" style="background:#F3F4F6">
 
 <head>
+  <script>(function(){var t=localStorage.getItem('ez-theme')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);document.documentElement.style.background=t==='dark'?'#000000':'#F0F4FF';})();</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lesson - EZ Programming</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css" />
+
+  <!--
+    Anti-flash script: runs synchronously before first paint.
+    Reads the saved theme and applies it to <html> immediately
+    so the background colour is correct before any CSS loads.
+  -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('ez-theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    })();
+  </script>
 </head>
 
 <body>
+  <!-- NAVBAR -->
   <div id="navbar"></div>
 
   <div class="lesson-container">
 
-    <!-- LEFT PANEL: content -->
+    <!-- LEFT PANEL: lesson content -->
     <div class="lesson-content-panel" id="contentArea">
       <div class="loading">
         <div class="spinner"></div>
@@ -22,7 +39,7 @@
       </div>
     </div>
 
-    <!-- RIGHT PANEL: editor -->
+    <!-- RIGHT PANEL: code editor (always dark) -->
     <div class="lesson-editor-panel">
       <div class="editor-toolbar">
         <span class="editor-label">Python Editor</span>

@@ -1,174 +1,658 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Seed Lessons - Fixed</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 30px;
-            background: #f8fafc;
-        }
-
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        #status {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Seed Lessons - EZ Programming</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; background: #f8fafc; max-width: 700px; margin: 0 auto; }
+    h1   { color: #0f172a; }
+    p    { color: #475569; }
+    button {
+      padding: 15px 30px; font-size: 18px;
+      background: #2563eb; color: white;
+      border: none; border-radius: 8px; cursor: pointer;
+    }
+    button:hover    { background: #1d4ed8; }
+    button:disabled { background: #94a3b8; cursor: not-allowed; }
+    #status {
+      margin-top: 20px; padding: 15px;
+      background: #f1f5f9; border-radius: 8px;
+      font-weight: bold; min-height: 48px;
+      white-space: pre-line; line-height: 1.8;
+    }
+  </style>
 </head>
-
 <body>
-    <h1>Seed Lessons with Full Content</h1>
-    <button id="seedBtn">🌱 Seed All 10 Lessons (Fixed)</button>
-    <div id="status"></div>
+  <h1>Seed All 10 Lessons</h1>
+  <p>Click the button below to push all 10 fully-detailed lessons into Firestore.<br>
+     <strong>Note:</strong> You must be logged in as admin for this to work.</p>
+  <button id="seedBtn">Seed / Re-Seed All 10 Lessons</button>
+  <div id="status">Ready.</div>
 
-    <script type="module">
-        import { createLesson } from './js/auth.js';
+  <script type="module">
+    import { createLesson } from './js/auth.js';
 
-        const lessons = [
-            {
-                title: 'Hello World in Python',
-                topic: 'Introduction',
-                difficulty: 'beginner',
-                orderIndex: 1,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Welcome to Python!</h2><p>Python is a popular, easy-to-learn programming language used for web development, data science, automation, and more.</p><p>Let's start with the most famous first program.</p>`,
-                starterCode: `print("Hello World")`,
-                hint: 'Use the print() function to display text on the screen.'
-            },
-            {
-                title: 'Variables and Data Types',
-                topic: 'Basics',
-                difficulty: 'beginner',
-                orderIndex: 2,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Variables and Data Types</h2><p>Variables are containers for storing data. Python is dynamically typed, so you don't need to declare types.</p>`,
-                starterCode: `name = "Abdul"\nage = 20\nheight = 5.9\nis_student = True\nprint(name, age, height, is_student)`,
-                hint: 'Use = to assign values. Common types: str, int, float, bool.'
-            },
-            {
-                title: 'Conditional Statements',
-                topic: 'Control Flow',
-                difficulty: 'beginner',
-                orderIndex: 3,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Conditional Statements (if, elif, else)</h2><p>Conditionals let your program make decisions based on conditions.</p>`,
-                starterCode: `score = 85\nif score >= 90:\n    print("Excellent")\nelif score >= 70:\n    print("Good")\nelse:\n    print("Needs improvement")`,
-                hint: 'Use if, elif, and else to control program flow.'
-            },
-            {
-                title: 'Loops - For and While',
-                topic: 'Control Flow',
-                difficulty: 'intermediate',
-                orderIndex: 4,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Loops in Python</h2><p>Loops allow you to execute code repeatedly. for loops are great for iterating over sequences.</p>`,
-                starterCode: `for i in range(1, 6):\n    print("Count:", i)`,
-                hint: 'Use range() with for loops or while for condition-based loops.'
-            },
-            {
-                title: 'Functions in Python',
-                topic: 'Functions',
-                difficulty: 'intermediate',
-                orderIndex: 5,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Functions</h2><p>Functions are reusable blocks of code that perform a specific task.</p>`,
-                starterCode: `def greet(name, age):\n    return f"Hello {name}, you are {age} years old."\nprint(greet("Ali", 21))`,
-                hint: 'Define functions using the def keyword.'
-            },
-            {
-                title: 'Lists and Tuples',
-                topic: 'Data Structures',
-                difficulty: 'intermediate',
-                orderIndex: 6,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Lists and Tuples</h2><p>Lists are mutable (can be changed), tuples are immutable.</p>`,
-                starterCode: `fruits = ["apple", "banana", "cherry"]\nfruits.append("mango")\nprint(fruits)\nprint(len(fruits))`,
-                hint: 'Use [] for lists and () for tuples.'
-            },
-            {
-                title: 'Dictionaries (Key-Value)',
-                topic: 'Data Structures',
-                difficulty: 'intermediate',
-                orderIndex: 7,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Dictionaries</h2><p>Dictionaries store data as key-value pairs and are very fast for lookups.</p>`,
-                starterCode: `student = {\n    "name": "Abdul",\n    "age": 22,\n    "course": "Python"\n}\nprint(student["name"])\nprint(student.get("grade", "Not assigned"))`,
-                hint: 'Use curly braces {} and key-value pairs.'
-            },
-            {
-                title: 'List Comprehensions',
-                topic: 'Advanced Basics',
-                difficulty: 'intermediate',
-                orderIndex: 8,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>List Comprehensions</h2><p>A concise and Pythonic way to create new lists.</p>`,
-                starterCode: `squares = [x**2 for x in range(10)]\neven_squares = [x**2 for x in range(10) if x % 2 == 0]\nprint(squares)\nprint(even_squares)`,
-                hint: 'List comprehensions are written inside square brackets.'
-            },
-            {
-                title: 'Error Handling (Try/Except)',
-                topic: 'Error Handling',
-                difficulty: 'intermediate',
-                orderIndex: 9,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>Error Handling</h2><p>Use try/except to handle errors gracefully without crashing the program.</p>`,
-                starterCode: `try:\n    result = 10 / 0\nexcept ZeroDivisionError:\n    print("Cannot divide by zero!")\nexcept Exception as e:\n    print("An error occurred:", e)`,
-                hint: 'Wrap risky code in try block and handle errors in except.'
-            },
-            {
-                title: 'File I/O Basics',
-                topic: 'File Handling',
-                difficulty: 'advanced',
-                orderIndex: 10,
-                isPublished: true,
-                isHidden: false,
-                content: `<h2>File Input and Output</h2><p>Reading from and writing to files is a fundamental skill.</p>`,
-                starterCode: `with open("sample.txt", "w") as f:\n    f.write("Hello from Python File Handling!")\n\nwith open("sample.txt", "r") as f:\n    content = f.read()\n    print(content)`,
-                hint: 'Use open() with "r" for reading and "w" for writing.'
-            }
-        ];
+    var lessons = [
 
+      {
+        title: 'Hello World in Python',
+        topic: 'Introduction',
+        difficulty: 'beginner',
+        orderIndex: 1,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Welcome to Python!</h2>'
+          + '<p>Python is one of the world\'s most popular programming languages. It is used in web development, data science, artificial intelligence, automation, and much more. The best part? It reads almost like plain English.</p>'
+          + '<h3>Your First Program</h3>'
+          + '<p>Every programmer begins with the same classic line. In Python you use the built-in <code>print()</code> function to show text on the screen:</p>'
+          + '<ul>'
+          + '<li><code>print("Hello World")</code> - displays the words between the quotes.</li>'
+          + '<li>You can print numbers too: <code>print(42)</code></li>'
+          + '<li>Or multiple things at once: <code>print("My age is", 20)</code></li>'
+          + '</ul>'
+          + '<h3>How Python Runs</h3>'
+          + '<p>Python reads your code line by line from top to bottom. Each <code>print()</code> call outputs one line. Try adding more print statements and see what happens.</p>'
+          + '<h3>Comments</h3>'
+          + '<p>A <strong>comment</strong> starts with <code>#</code>. Python ignores it completely - it is just a note for you or other developers.</p>'
+          + '<p>Example: <code># This is a comment</code></p>'
+          + '<h3>Why Python?</h3>'
+          + '<ul>'
+          + '<li>Simple, readable syntax - great for beginners.</li>'
+          + '<li>Huge community and thousands of free libraries.</li>'
+          + '<li>Used by Google, Netflix, NASA, and Instagram.</li>'
+          + '</ul>',
+        starterCode: '# Your very first Python program!\n'
+          + '# Lines starting with # are comments - Python ignores them.\n\n'
+          + 'print("Hello World")\n'
+          + 'print("Welcome to EZ Programming!")\n\n'
+          + '# You can print numbers too\n'
+          + 'print("I am", 20, "years old")\n\n'
+          + '# Try changing the text and running again!',
+        hint: 'Use print() to display text. Wrap text in double quotes. Comments start with #.'
+      },
 
+      {
+        title: 'Variables and Data Types',
+        topic: 'Basics',
+        difficulty: 'beginner',
+        orderIndex: 2,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Variables and Data Types</h2>'
+          + '<p>A <strong>variable</strong> is like a labelled box where you store information. You give the box a name, put data in it, and refer to it by that name later in your program.</p>'
+          + '<h3>Creating a Variable</h3>'
+          + '<p>Use the <code>=</code> sign to assign a value:</p>'
+          + '<ul>'
+          + '<li><code>name = "Abdul"</code> - stores the text Abdul</li>'
+          + '<li><code>age = 20</code> - stores the number 20</li>'
+          + '</ul>'
+          + '<p>You do <strong>not</strong> need to declare a type - Python figures it out automatically.</p>'
+          + '<h3>The Four Core Data Types</h3>'
+          + '<ul>'
+          + '<li><strong>str (String)</strong> - text, wrapped in quotes: <code>"Hello"</code></li>'
+          + '<li><strong>int (Integer)</strong> - whole numbers: <code>5</code>, <code>-3</code>, <code>100</code></li>'
+          + '<li><strong>float (Decimal)</strong> - numbers with a decimal point: <code>3.14</code>, <code>9.81</code></li>'
+          + '<li><strong>bool (Boolean)</strong> - only two values: <code>True</code> or <code>False</code></li>'
+          + '</ul>'
+          + '<h3>Checking the Type</h3>'
+          + '<p>Use <code>type()</code> to see what type a variable holds:</p>'
+          + '<p><code>print(type(age))</code> gives <em>class int</em></p>'
+          + '<h3>F-Strings (Clean Output)</h3>'
+          + '<p>Prefix a string with <code>f</code> to embed variables directly inside it:</p>'
+          + '<p><code>print(f"My name is {name} and I am {age} years old.")</code></p>'
+          + '<h3>Rules for Variable Names</h3>'
+          + '<ul>'
+          + '<li>Must start with a letter or underscore, not a number.</li>'
+          + '<li>Can contain letters, numbers, and underscores.</li>'
+          + '<li>Case-sensitive: <code>Name</code> and <code>name</code> are different.</li>'
+          + '</ul>',
+        starterCode: '# --- Strings ---\n'
+          + 'name = "Abdul"\n'
+          + 'city = "Lahore"\n\n'
+          + '# --- Integers ---\n'
+          + 'age = 20\n'
+          + 'year = 2026\n\n'
+          + '# --- Floats ---\n'
+          + 'height = 5.9\n'
+          + 'gpa = 3.75\n\n'
+          + '# --- Booleans ---\n'
+          + 'is_student = True\n'
+          + 'has_job = False\n\n'
+          + '# Print them all\n'
+          + 'print("Name:", name)\n'
+          + 'print("City:", city)\n'
+          + 'print("Age:", age, "| Year:", year)\n'
+          + 'print("Height:", height, "| GPA:", gpa)\n'
+          + 'print("Student?", is_student, "| Employed?", has_job)\n\n'
+          + '# F-string (clean way to print)\n'
+          + 'print(f"{name} from {city} is {age} years old.")\n\n'
+          + '# Check types\n'
+          + 'print(type(name), type(age), type(height), type(is_student))',
+        hint: 'Use = to assign values. The four main types are str, int, float, bool. Use f-strings for clean output: f"Hello {name}".'
+      },
 
-        document.getElementById('seedBtn').onclick = async () => {
-            const status = document.getElementById('status');
-            status.textContent = 'Seeding...';
+      {
+        title: 'Conditional Statements',
+        topic: 'Control Flow',
+        difficulty: 'beginner',
+        orderIndex: 3,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Conditional Statements (if / elif / else)</h2>'
+          + '<p>Programs need to make decisions. Conditional statements let your code choose different paths depending on whether a condition is <code>True</code> or <code>False</code>.</p>'
+          + '<h3>Basic if Statement</h3>'
+          + '<p>The code inside the <code>if</code> block only runs when the condition is true.</p>'
+          + '<p><strong>Important:</strong> Python uses indentation (4 spaces) to define blocks - there are no curly braces.</p>'
+          + '<h3>if / else</h3>'
+          + '<p>Add <code>else</code> to handle the case when the condition is false.</p>'
+          + '<h3>if / elif / else</h3>'
+          + '<p>Use <code>elif</code> (short for "else if") to check more than two cases.</p>'
+          + '<h3>Comparison Operators</h3>'
+          + '<ul>'
+          + '<li><code>==</code> equal to</li>'
+          + '<li><code>!=</code> not equal to</li>'
+          + '<li><code>&gt;</code> greater than | <code>&lt;</code> less than</li>'
+          + '<li><code>&gt;=</code> greater or equal | <code>&lt;=</code> less or equal</li>'
+          + '</ul>'
+          + '<h3>Logical Operators</h3>'
+          + '<ul>'
+          + '<li><code>and</code> - both conditions must be true</li>'
+          + '<li><code>or</code> - at least one must be true</li>'
+          + '<li><code>not</code> - flips True to False and vice versa</li>'
+          + '</ul>',
+        starterCode: '# --- Grade Calculator ---\n'
+          + 'score = 78\n\n'
+          + 'if score >= 90:\n'
+          + '    print("Grade: A - Excellent!")\n'
+          + 'elif score >= 80:\n'
+          + '    print("Grade: B - Very Good")\n'
+          + 'elif score >= 70:\n'
+          + '    print("Grade: C - Good")\n'
+          + 'elif score >= 60:\n'
+          + '    print("Grade: D - Passing")\n'
+          + 'else:\n'
+          + '    print("Grade: F - Needs Improvement")\n\n'
+          + '# --- Logical Operators ---\n'
+          + 'age = 20\n'
+          + 'has_id = True\n\n'
+          + 'if age >= 18 and has_id:\n'
+          + '    print("Access granted")\n'
+          + 'else:\n'
+          + '    print("Access denied")\n\n'
+          + '# --- One-liner shorthand ---\n'
+          + 'x = 10\n'
+          + 'print("Even" if x % 2 == 0 else "Odd")',
+        hint: 'Use if / elif / else for decisions. Indent with 4 spaces. Use == to compare (not =). Combine conditions with and / or.'
+      },
 
-            for (const lesson of lessons) {
-                await createLesson(lesson);
-                console.log('Seeded:', lesson.title);
-            }
-            status.textContent = '✅ All lessons seeded successfully!';
-            alert('Seeding Complete!');
-        };
-    </script>
+      {
+        title: 'Loops - For and While',
+        topic: 'Control Flow',
+        difficulty: 'intermediate',
+        orderIndex: 4,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Loops in Python</h2>'
+          + '<p>A <strong>loop</strong> lets you run the same block of code multiple times without copy-pasting it. Python has two types: <code>for</code> and <code>while</code>.</p>'
+          + '<h3>The for Loop</h3>'
+          + '<p>Use <code>for</code> when you know how many times to repeat, or when iterating over a sequence.</p>'
+          + '<p><code>for i in range(5):</code> - runs 5 times (i = 0, 1, 2, 3, 4).</p>'
+          + '<p><code>range(start, stop, step)</code> - start is inclusive, stop is exclusive.</p>'
+          + '<h3>Looping Over a List</h3>'
+          + '<p><code>for fruit in ["apple", "banana", "cherry"]:</code> iterates over each item.</p>'
+          + '<h3>The while Loop</h3>'
+          + '<p>Use <code>while</code> when you want to keep looping as long as a condition stays true.</p>'
+          + '<p><strong>Warning:</strong> Always make sure the condition eventually becomes False or you get an infinite loop!</p>'
+          + '<h3>break and continue</h3>'
+          + '<ul>'
+          + '<li><code>break</code> - exits the loop immediately.</li>'
+          + '<li><code>continue</code> - skips the rest of the current iteration and moves to the next.</li>'
+          + '</ul>'
+          + '<h3>enumerate()</h3>'
+          + '<p>Get both the index and the value at the same time:</p>'
+          + '<p><code>for i, name in enumerate(["Ali", "Sara"]):</code></p>',
+        starterCode: '# --- for loop with range ---\n'
+          + 'print("Counting 1 to 5:")\n'
+          + 'for i in range(1, 6):\n'
+          + '    print(i, end=" ")\n'
+          + 'print()  # new line\n\n'
+          + '# --- Looping over a list ---\n'
+          + 'subjects = ["Math", "Python", "Physics", "English"]\n'
+          + 'print("\\nMy subjects:")\n'
+          + 'for subject in subjects:\n'
+          + '    print(" -", subject)\n\n'
+          + '# --- while loop ---\n'
+          + 'print("\\nCountdown:")\n'
+          + 'n = 5\n'
+          + 'while n > 0:\n'
+          + '    print(n, end=" ")\n'
+          + '    n -= 1\n'
+          + 'print("Go!")\n\n'
+          + '# --- break and continue ---\n'
+          + 'print("\\nOdd numbers below 9:")\n'
+          + 'for i in range(1, 15):\n'
+          + '    if i % 2 == 0:\n'
+          + '        continue   # skip even numbers\n'
+          + '    if i == 9:\n'
+          + '        break      # stop at 9\n'
+          + '    print(i, end=" ")\n\n'
+          + '# --- enumerate ---\n'
+          + 'print("\\n\\nSubjects with index:")\n'
+          + 'for idx, subj in enumerate(subjects, start=1):\n'
+          + '    print(f"  {idx}. {subj}")',
+        hint: 'Use for to iterate over a known range or list. Use while for condition-based loops. Use break to exit early, continue to skip an iteration.'
+      },
+
+      {
+        title: 'Functions in Python',
+        topic: 'Functions',
+        difficulty: 'intermediate',
+        orderIndex: 5,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Functions</h2>'
+          + '<p>A <strong>function</strong> is a named, reusable block of code. Instead of writing the same logic over and over, you define it once and call it by name whenever you need it.</p>'
+          + '<h3>Defining a Function</h3>'
+          + '<p>Use the <code>def</code> keyword, followed by the function name and parentheses:</p>'
+          + '<p><code>def greet():</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>print("Hello!")</code></p>'
+          + '<p>Call it with: <code>greet()</code></p>'
+          + '<h3>Parameters and Arguments</h3>'
+          + '<p><strong>Parameters</strong> are placeholders in the definition. <strong>Arguments</strong> are the real values you pass when calling the function.</p>'
+          + '<h3>Return Values</h3>'
+          + '<p>Use <code>return</code> to send a result back to the caller:</p>'
+          + '<p><code>def add(a, b):</code><br>&nbsp;&nbsp;&nbsp;&nbsp;<code>return a + b</code></p>'
+          + '<h3>Default Parameter Values</h3>'
+          + '<p>Give a parameter a default so the caller can skip it:</p>'
+          + '<p><code>def greet(name="friend"):</code></p>'
+          + '<h3>Why Use Functions?</h3>'
+          + '<ul>'
+          + '<li>DRY principle - Don\'t Repeat Yourself.</li>'
+          + '<li>Makes code easier to read, test, and maintain.</li>'
+          + '<li>Break a big problem into small, manageable pieces.</li>'
+          + '</ul>',
+        starterCode: '# --- Basic function with default parameter ---\n'
+          + 'def greet(name="friend"):\n'
+          + '    print(f"Hello, {name}! Welcome to Python.")\n\n'
+          + 'greet()          # uses default\n'
+          + 'greet("Abdul")   # passes an argument\n\n'
+          + '# --- Functions with return values ---\n'
+          + 'def add(a, b):\n'
+          + '    return a + b\n\n'
+          + 'def multiply(a, b):\n'
+          + '    return a * b\n\n'
+          + 'print("\\n3 + 7 =", add(3, 7))\n'
+          + 'print("4 x 5 =", multiply(4, 5))\n\n'
+          + '# --- Practical: Grade calculator as a function ---\n'
+          + 'def get_grade(score):\n'
+          + '    if score >= 90: return "A"\n'
+          + '    elif score >= 80: return "B"\n'
+          + '    elif score >= 70: return "C"\n'
+          + '    elif score >= 60: return "D"\n'
+          + '    else: return "F"\n\n'
+          + 'scores = [95, 82, 71, 58, 100]\n'
+          + 'print("\\nGrade Report:")\n'
+          + 'for s in scores:\n'
+          + '    print(f"  Score {s:>3} -> Grade {get_grade(s)}")\n\n'
+          + '# --- Multiple return values ---\n'
+          + 'def min_max(numbers):\n'
+          + '    return min(numbers), max(numbers)\n\n'
+          + 'lo, hi = min_max([4, 1, 9, 3, 7])\n'
+          + 'print(f"\\nMin: {lo}, Max: {hi}")',
+        hint: 'Define with def. Use parameters for input, return for output. Give parameters defaults to make them optional.'
+      },
+
+      {
+        title: 'Lists and Tuples',
+        topic: 'Data Structures',
+        difficulty: 'intermediate',
+        orderIndex: 6,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Lists and Tuples</h2>'
+          + '<p>So far every variable has held one value. <strong>Lists</strong> and <strong>Tuples</strong> let you store multiple values in a single variable.</p>'
+          + '<h3>Lists [ ]</h3>'
+          + '<p>A list is <strong>ordered</strong> and <strong>mutable</strong> (you can add, remove, or change items).</p>'
+          + '<p><code>fruits = ["apple", "banana", "cherry"]</code></p>'
+          + '<p>Access items by their <strong>index</strong> (starts at 0):</p>'
+          + '<ul>'
+          + '<li><code>fruits[0]</code> gives "apple"</li>'
+          + '<li><code>fruits[-1]</code> gives "cherry" (negative = count from end)</li>'
+          + '</ul>'
+          + '<h3>Common List Methods</h3>'
+          + '<ul>'
+          + '<li><code>.append(x)</code> - add x to the end</li>'
+          + '<li><code>.insert(i, x)</code> - insert x at position i</li>'
+          + '<li><code>.remove(x)</code> - remove the first occurrence of x</li>'
+          + '<li><code>.pop()</code> - remove and return the last item</li>'
+          + '<li><code>.sort()</code> - sort the list in place</li>'
+          + '<li><code>len(list)</code> - number of items</li>'
+          + '</ul>'
+          + '<h3>Slicing</h3>'
+          + '<p>Extract a sub-list with <code>list[start:stop]</code>. Stop index is NOT included.</p>'
+          + '<h3>Tuples ( )</h3>'
+          + '<p>A tuple is like a list but <strong>immutable</strong> - once created it cannot be changed. Use tuples for data that should stay fixed (coordinates, RGB colours).</p>',
+        starterCode: '# --- Creating a list ---\n'
+          + 'students = ["Ali", "Sara", "Raza", "Maria", "Omar"]\n'
+          + 'print("Class:", students)\n'
+          + 'print("First student:", students[0])\n'
+          + 'print("Last student:", students[-1])\n\n'
+          + '# --- Modifying a list ---\n'
+          + 'students.append("Zara")        # add to end\n'
+          + 'students.insert(2, "Hassan")   # insert at index 2\n'
+          + 'students.remove("Raza")        # remove by value\n'
+          + 'print("\\nUpdated:", students)\n'
+          + 'print("Total:", len(students))\n\n'
+          + '# --- Slicing ---\n'
+          + 'print("\\nFirst three:", students[:3])\n'
+          + 'print("Last two:", students[-2:])\n\n'
+          + '# --- Looping over a list ---\n'
+          + 'print("\\nRoll call:")\n'
+          + 'for i, name in enumerate(students, start=1):\n'
+          + '    print(f"  {i}. {name}")\n\n'
+          + '# --- Sorting ---\n'
+          + 'students.sort()\n'
+          + 'print("\\nAlphabetical:", students)\n\n'
+          + '# --- Tuples (immutable) ---\n'
+          + 'coordinates = (33.6844, 73.0479)   # Islamabad lat/lng\n'
+          + 'print(f"\\nLocation: lat={coordinates[0]}, lng={coordinates[1]}")',
+        hint: 'Lists use [] and are mutable. Tuples use () and are immutable. Index starts at 0. Use .append() to add, .remove() to delete, len() for size.'
+      },
+
+      {
+        title: 'Dictionaries (Key-Value Pairs)',
+        topic: 'Data Structures',
+        difficulty: 'intermediate',
+        orderIndex: 7,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Dictionaries</h2>'
+          + '<p>A <strong>dictionary</strong> stores data as <strong>key-value pairs</strong>. Instead of accessing items by a number index, you access them by a meaningful key - like looking up a word in a real dictionary.</p>'
+          + '<h3>Creating a Dictionary</h3>'
+          + '<p><code>student = {"name": "Abdul", "age": 22, "gpa": 3.8}</code></p>'
+          + '<p>Keys are usually strings. Values can be any type (string, number, list, or even another dictionary).</p>'
+          + '<h3>Accessing Values</h3>'
+          + '<ul>'
+          + '<li><code>student["name"]</code> - direct access (raises KeyError if missing)</li>'
+          + '<li><code>student.get("grade", "N/A")</code> - safe access with a default value</li>'
+          + '</ul>'
+          + '<h3>Adding and Updating</h3>'
+          + '<p><code>student["email"] = "a@b.com"</code> - adds a new key.<br>'
+          + '<code>student["age"] = 23</code> - updates an existing key.</p>'
+          + '<h3>Removing</h3>'
+          + '<p><code>del student["gpa"]</code> or <code>student.pop("gpa")</code></p>'
+          + '<h3>Useful Methods</h3>'
+          + '<ul>'
+          + '<li><code>.keys()</code> - all keys</li>'
+          + '<li><code>.values()</code> - all values</li>'
+          + '<li><code>.items()</code> - key-value pairs (great for looping)</li>'
+          + '<li><code>key in dict</code> - check if a key exists</li>'
+          + '</ul>'
+          + '<h3>Nested Dictionaries</h3>'
+          + '<p>A dictionary can contain other dictionaries, which is how real-world JSON API data is structured.</p>',
+        starterCode: '# --- Basic dictionary ---\n'
+          + 'student = {\n'
+          + '    "name": "Abdul",\n'
+          + '    "age": 22,\n'
+          + '    "city": "Lahore",\n'
+          + '    "gpa": 3.75,\n'
+          + '    "courses": ["Python", "Math", "Physics"]\n'
+          + '}\n\n'
+          + 'print("Name:", student["name"])\n'
+          + 'print("GPA:", student["gpa"])\n'
+          + 'print("Courses:", student["courses"])\n'
+          + 'print("Grade:", student.get("grade", "Not assigned yet"))\n\n'
+          + '# --- Add and update ---\n'
+          + 'student["email"] = "abdul@example.com"\n'
+          + 'student["age"] = 23\n'
+          + 'print("\\nUpdated student:", student)\n\n'
+          + '# --- Loop through items ---\n'
+          + 'print("\\nStudent Profile:")\n'
+          + 'for key, value in student.items():\n'
+          + '    print(f"  {key}: {value}")\n\n'
+          + '# --- Check membership ---\n'
+          + 'print("\\nHas email?", "email" in student)\n'
+          + 'print("Has phone?", "phone" in student)\n\n'
+          + '# --- Nested dictionary ---\n'
+          + 'university = {\n'
+          + '    "name": "FAST-NUCES",\n'
+          + '    "location": "Lahore",\n'
+          + '    "departments": {"CS": 500, "EE": 300, "BBA": 200}\n'
+          + '}\n'
+          + 'print("\\nCS students:", university["departments"]["CS"])',
+        hint: 'Use {} for dictionaries. Access with dict["key"]. Use .get("key", default) for safe access. Loop with .items() to get both key and value.'
+      },
+
+      {
+        title: 'List Comprehensions',
+        topic: 'Advanced Basics',
+        difficulty: 'intermediate',
+        orderIndex: 8,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>List Comprehensions</h2>'
+          + '<p>A <strong>list comprehension</strong> is a compact, Pythonic way to create a new list from an existing one - combining a loop and an optional condition into a single line.</p>'
+          + '<h3>Basic Syntax</h3>'
+          + '<p><code>[expression for item in iterable]</code></p>'
+          + '<h3>Comparison</h3>'
+          + '<p><strong>Traditional loop:</strong></p>'
+          + '<p><code>squares = []</code><br>'
+          + '<code>for x in range(10):</code><br>'
+          + '&nbsp;&nbsp;&nbsp;&nbsp;<code>squares.append(x**2)</code></p>'
+          + '<p><strong>List comprehension (same result, one line):</strong></p>'
+          + '<p><code>squares = [x**2 for x in range(10)]</code></p>'
+          + '<h3>With a Condition (Filter)</h3>'
+          + '<p><code>[expression for item in iterable if condition]</code></p>'
+          + '<p>Example - even numbers only:</p>'
+          + '<p><code>evens = [x for x in range(20) if x % 2 == 0]</code></p>'
+          + '<h3>String Transformations</h3>'
+          + '<p><code>upper_names = [name.upper() for name in names]</code></p>'
+          + '<h3>When to Use</h3>'
+          + '<ul>'
+          + '<li>Great for simple transformations and filters.</li>'
+          + '<li>If the logic is complex, a regular loop is more readable.</li>'
+          + '<li>Generally faster than equivalent for-loops in Python.</li>'
+          + '</ul>',
+        starterCode: '# --- Squares ---\n'
+          + 'squares = [x**2 for x in range(1, 11)]\n'
+          + 'print("Squares:", squares)\n\n'
+          + '# --- Even numbers only ---\n'
+          + 'evens = [x for x in range(1, 21) if x % 2 == 0]\n'
+          + 'print("Evens:", evens)\n\n'
+          + '# --- String transformation ---\n'
+          + 'names = ["ali", "sara", "raza", "maria", "omar"]\n'
+          + 'upper = [n.upper() for n in names]\n'
+          + 'print("Upper:", upper)\n\n'
+          + '# --- Filter by length ---\n'
+          + 'long_names = [n for n in names if len(n) > 3]\n'
+          + 'print("Names longer than 3 chars:", long_names)\n\n'
+          + '# --- Cube of odd numbers only ---\n'
+          + 'odd_cubes = [x**3 for x in range(1, 10) if x % 2 != 0]\n'
+          + 'print("Odd cubes:", odd_cubes)\n\n'
+          + '# --- Practical: passing vs failing students ---\n'
+          + 'scores = {"Ali": 88, "Sara": 45, "Raza": 72, "Omar": 39, "Maria": 95}\n'
+          + 'passed = [name for name, score in scores.items() if score >= 50]\n'
+          + 'failed = [name for name, score in scores.items() if score < 50]\n'
+          + 'print("\\nPassed:", passed)\n'
+          + 'print("Failed:", failed)',
+        hint: 'Syntax: [expression for item in iterable if condition]. Replaces simple for-append loops with a single readable line.'
+      },
+
+      {
+        title: 'Error Handling (Try / Except)',
+        topic: 'Error Handling',
+        difficulty: 'intermediate',
+        orderIndex: 9,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>Error Handling</h2>'
+          + '<p>Programs encounter unexpected situations - a user types text instead of a number, a file does not exist, a network request fails. Without error handling these <strong>exceptions</strong> crash your program. With <code>try / except</code> you catch them and respond gracefully.</p>'
+          + '<h3>Basic Structure</h3>'
+          + '<p><code>try:</code><br>'
+          + '&nbsp;&nbsp;&nbsp;&nbsp;<code># code that might fail</code><br>'
+          + '<code>except SomeError:</code><br>'
+          + '&nbsp;&nbsp;&nbsp;&nbsp;<code># what to do when it fails</code></p>'
+          + '<h3>Common Exception Types</h3>'
+          + '<ul>'
+          + '<li><code>ValueError</code> - wrong value type (e.g. converting "abc" to int)</li>'
+          + '<li><code>ZeroDivisionError</code> - dividing by zero</li>'
+          + '<li><code>IndexError</code> - list index out of range</li>'
+          + '<li><code>KeyError</code> - dictionary key does not exist</li>'
+          + '<li><code>TypeError</code> - wrong type of argument</li>'
+          + '<li><code>Exception</code> - catches everything (use as last resort)</li>'
+          + '</ul>'
+          + '<h3>else and finally</h3>'
+          + '<ul>'
+          + '<li><code>else:</code> - runs only if no exception occurred.</li>'
+          + '<li><code>finally:</code> - runs always, whether an error happened or not. Perfect for cleanup (closing files, connections).</li>'
+          + '</ul>'
+          + '<h3>Raising Exceptions</h3>'
+          + '<p>You can deliberately raise an exception with <code>raise</code>:</p>'
+          + '<p><code>raise ValueError("Age cannot be negative")</code></p>',
+        starterCode: '# --- Basic try/except ---\n'
+          + 'print("=== Division ===")\n'
+          + 'try:\n'
+          + '    result = 10 / 0\n'
+          + 'except ZeroDivisionError:\n'
+          + '    print("Error: Cannot divide by zero!")\n\n'
+          + '# --- Multiple except blocks ---\n'
+          + 'print("\\n=== Type Conversion ===")\n'
+          + 'values = ["42", "hello", "7", None]\n'
+          + 'for v in values:\n'
+          + '    try:\n'
+          + '        number = int(v)\n'
+          + '        print(f"  Converted: {number}")\n'
+          + '    except (ValueError, TypeError) as e:\n'
+          + '        print(f"  Failed for {v}: {e}")\n\n'
+          + '# --- else and finally ---\n'
+          + 'print("\\n=== Key Lookup ===")\n'
+          + 'data = {"name": "Abdul", "age": 22}\n'
+          + 'try:\n'
+          + '    print("Name:", data["name"])\n'
+          + '    print("Phone:", data["phone"])   # KeyError!\n'
+          + 'except KeyError as e:\n'
+          + '    print(f"Key not found: {e}")\n'
+          + 'else:\n'
+          + '    print("All keys retrieved successfully.")\n'
+          + 'finally:\n'
+          + '    print("(This always runs - good for cleanup)")\n\n'
+          + '# --- Raising your own exceptions ---\n'
+          + 'print("\\n=== Custom Validation ===")\n'
+          + 'def set_age(age):\n'
+          + '    if not isinstance(age, int):\n'
+          + '        raise TypeError("Age must be an integer")\n'
+          + '    if age < 0 or age > 150:\n'
+          + '        raise ValueError(f"Age {age} is out of realistic range")\n'
+          + '    return age\n\n'
+          + 'for test in [25, -5, 200, "old"]:\n'
+          + '    try:\n'
+          + '        print(f"  Age {test} -> valid: {set_age(test)}")\n'
+          + '    except (ValueError, TypeError) as e:\n'
+          + '        print(f"  Age {test} -> invalid: {e}")',
+        hint: 'Wrap risky code in try. Catch specific exceptions in except. Use finally for cleanup that must always run. Use raise to throw your own exceptions.'
+      },
+
+      {
+        title: 'File I/O Basics',
+        topic: 'File Handling',
+        difficulty: 'advanced',
+        orderIndex: 10,
+        isPublished: true,
+        isHidden: false,
+        content: '<h2>File Input and Output</h2>'
+          + '<p>Almost every real application reads from or writes to files - saving settings, logging data, processing CSV reports. Python makes file I/O straightforward with the built-in <code>open()</code> function.</p>'
+          + '<h3>Opening a File</h3>'
+          + '<p><code>file = open("filename.txt", mode)</code></p>'
+          + '<p>Common modes:</p>'
+          + '<ul>'
+          + '<li><code>"r"</code> - read (default). File must exist.</li>'
+          + '<li><code>"w"</code> - write. Creates file if absent; <strong>overwrites</strong> if it exists.</li>'
+          + '<li><code>"a"</code> - append. Adds to the end without erasing existing content.</li>'
+          + '<li><code>"r+"</code> - read and write.</li>'
+          + '</ul>'
+          + '<h3>The with Statement (Best Practice)</h3>'
+          + '<p>Always use <code>with open(...) as f:</code> - it <strong>automatically closes</strong> the file when the block ends, even if an error occurs.</p>'
+          + '<h3>Reading Methods</h3>'
+          + '<ul>'
+          + '<li><code>f.read()</code> - reads entire file as one string.</li>'
+          + '<li><code>f.readline()</code> - reads one line at a time.</li>'
+          + '<li><code>f.readlines()</code> - reads all lines into a list.</li>'
+          + '<li><code>for line in f:</code> - most memory-efficient for large files.</li>'
+          + '</ul>'
+          + '<h3>Note on This Editor</h3>'
+          + '<p>In this browser-based editor, file operations work in a virtual filesystem. Files are not saved to your real hard drive, but all Python file operations behave exactly the same way.</p>',
+        starterCode: '# --- Write a file ---\n'
+          + 'with open("students.txt", "w") as f:\n'
+          + '    f.write("Name,Score,Grade\\n")\n'
+          + '    f.write("Ali,88,B\\n")\n'
+          + '    f.write("Sara,95,A\\n")\n'
+          + '    f.write("Raza,72,C\\n")\n'
+          + '    f.write("Maria,60,D\\n")\n'
+          + '    f.write("Omar,45,F\\n")\n\n'
+          + 'print("File written.")\n\n'
+          + '# --- Read the whole file ---\n'
+          + 'print("\\n=== File Contents ===")\n'
+          + 'with open("students.txt", "r") as f:\n'
+          + '    content = f.read()\n'
+          + 'print(content)\n\n'
+          + '# --- Read line by line ---\n'
+          + 'print("=== Line by Line ===")\n'
+          + 'with open("students.txt", "r") as f:\n'
+          + '    for line in f:\n'
+          + '        print(line.strip())   # strip() removes trailing newline\n\n'
+          + '# --- Append to a file ---\n'
+          + 'with open("students.txt", "a") as f:\n'
+          + '    f.write("Zara,91,A\\n")\n\n'
+          + '# --- Read into a list and parse ---\n'
+          + 'with open("students.txt", "r") as f:\n'
+          + '    lines = f.readlines()\n\n'
+          + 'print("Total lines (incl. header):", len(lines))\n'
+          + 'print("Last entry:", lines[-1].strip())\n\n'
+          + '# --- Parse CSV manually ---\n'
+          + 'print("\\n=== Parsed Data ===")\n'
+          + 'with open("students.txt", "r") as f:\n'
+          + '    header = f.readline().strip().split(",")\n'
+          + '    print("Headers:", header)\n'
+          + '    for line in f:\n'
+          + '        parts = line.strip().split(",")\n'
+          + '        print(f"  {parts[0]}: score={parts[1]}, grade={parts[2]}")',
+        hint: 'Always use with open(...) as f - it closes the file automatically. Use "w" to write, "r" to read, "a" to append. .strip() removes trailing whitespace and newlines.'
+      }
+
+    ]; // end lessons array
+
+    document.getElementById('seedBtn').onclick = async function() {
+      var btn    = document.getElementById('seedBtn');
+      var status = document.getElementById('status');
+
+      btn.disabled = true;
+      btn.textContent = 'Seeding...';
+      status.textContent = '';
+
+      var seeded = 0;
+      var failed = 0;
+
+      for (var i = 0; i < lessons.length; i++) {
+        var lesson = lessons[i];
+        try {
+          await createLesson(lesson);
+          seeded++;
+          status.textContent += 'OK (' + seeded + '/' + lessons.length + ') ' + lesson.title + '\n';
+        } catch (err) {
+          failed++;
+          status.textContent += 'FAIL: ' + lesson.title + ' - ' + err.message + '\n';
+        }
+      }
+
+      if (failed === 0) {
+        status.textContent += '\nAll ' + seeded + ' lessons seeded successfully!';
+        alert('All ' + seeded + ' lessons seeded! Go to the dashboard to see them.');
+      } else {
+        status.textContent += '\nDone: ' + seeded + ' ok, ' + failed + ' failed. Make sure you are logged in as admin.';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Seed / Re-Seed All 10 Lessons';
+    };
+  </script>
 </body>
-
 </html>

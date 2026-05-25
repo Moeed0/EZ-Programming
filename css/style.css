@@ -15,8 +15,8 @@
 
   /* Text */
   --color-text: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94A3B8;
+  --color-text-secondary: #1E293B;
+  --color-text-muted: #64748B;
 
   /* Borders */
   --color-border: #E2E8F0;
@@ -44,9 +44,7 @@
 }
 
 /* ============================================
-   DARK MODE — pure black, applied via data-theme
-   and auto via prefers-color-scheme when no
-   data-theme attribute is set
+   DARK MODE
    ============================================ */
 
 [data-theme="dark"] {
@@ -157,7 +155,6 @@ a {
   justify-content: flex-end;
 }
 
-/* Nav links — plain text, no border/box */
 .navbar-links a.nav-link {
   font-size: 0.875rem;
   font-weight: 600;
@@ -186,7 +183,6 @@ a {
   background: rgba(220, 38, 38, 0.08) !important;
 }
 
-/* Divider between links and toggle */
 .nav-divider {
   width: 1px;
   height: 22px;
@@ -195,7 +191,6 @@ a {
   flex-shrink: 0;
 }
 
-/* Dark mode toggle button */
 .theme-toggle {
   width: 34px;
   height: 34px;
@@ -216,7 +211,6 @@ a {
   color: var(--color-text);
 }
 
-/* Show sun in dark, moon in light */
 .theme-toggle .icon-moon {
   display: var(--icon-moon-display);
 }
@@ -225,7 +219,6 @@ a {
   display: var(--icon-sun-display);
 }
 
-/* Mobile hamburger */
 .nav-toggle {
   display: none;
   background: none;
@@ -347,7 +340,6 @@ a {
   color: var(--color-text-secondary);
 }
 
-/* Lessons grid */
 .lessons-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
@@ -366,8 +358,6 @@ a {
   position: relative;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
-
-  /* Light mode: clean white card */
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow);
@@ -419,8 +409,7 @@ a {
   }
 }
 
-
-/* Difficulty badge */
+/* Difficulty badges */
 .lesson-card-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -433,7 +422,6 @@ a {
   margin-bottom: 4px;
 }
 
-/* Light badges */
 .badge-beginner {
   background: #DCFCE7;
   color: #15803D;
@@ -449,7 +437,6 @@ a {
   color: #991B1B;
 }
 
-/* Dark badges */
 [data-theme="dark"] .badge-beginner {
   background: #052E16;
   color: #4ADE80;
@@ -549,7 +536,7 @@ a {
 }
 
 /* ============================================
-   USER PROFILE CARD (dashboard)
+   USER PROFILE CARD
    ============================================ */
 
 .user-profile-card {
@@ -632,7 +619,7 @@ a {
   min-height: calc(100vh - 60px);
 }
 
-/* LEFT PANEL */
+/* LEFT PANEL — white in light, near-black in dark */
 .lesson-content-panel {
   background: var(--color-surface);
   color: var(--color-text);
@@ -641,7 +628,6 @@ a {
   border-right: 1px solid var(--color-border);
 }
 
-/* Dark mode left panel — slightly elevated */
 [data-theme="dark"] .lesson-content-panel {
   background: #0D0D0D;
   border-right-color: #222;
@@ -654,6 +640,7 @@ a {
   }
 }
 
+/* Back link */
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -670,6 +657,7 @@ a {
   opacity: 1;
 }
 
+/* Lesson title */
 .lesson-title {
   font-size: 1.7rem;
   font-weight: 800;
@@ -678,6 +666,7 @@ a {
   line-height: 1.25;
 }
 
+/* Meta badges row */
 .lesson-meta {
   display: flex;
   gap: 10px;
@@ -685,7 +674,6 @@ a {
   margin-bottom: 26px;
 }
 
-/* Meta badges */
 .meta-badge {
   display: inline-flex;
   align-items: center;
@@ -697,7 +685,7 @@ a {
   letter-spacing: 0.03em;
 }
 
-/* Light */
+/* Light meta badges */
 .meta-badge.topic {
   background: #EFF6FF;
   color: #1D4ED8;
@@ -718,7 +706,7 @@ a {
   color: #991B1B;
 }
 
-/* Dark */
+/* Dark meta badges */
 [data-theme="dark"] .meta-badge.topic {
   background: #172554;
   color: #93C5FD;
@@ -761,48 +749,186 @@ a {
   }
 }
 
-/* Lesson body */
+/* ── Lesson body text — high contrast in light mode ── */
 .lesson-body {
-  font-size: 0.95rem;
-  line-height: 1.85;
-  color: var(--color-text-secondary);
+  font-size: 0.96rem;
+  line-height: 1.9;
+  color: #1E293B;
+}
+
+[data-theme="dark"] .lesson-body {
+  color: #CBD5E1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lesson-body {
+    color: #CBD5E1;
+  }
 }
 
 .lesson-body h2 {
-  font-size: 1.1rem;
-  color: var(--color-text);
-  margin: 22px 0 10px;
+  font-size: 1.15rem;
   font-weight: 700;
+  color: #0F172A;
+  margin: 26px 0 10px;
+  letter-spacing: -0.01em;
+}
+
+[data-theme="dark"] .lesson-body h2 {
+  color: #F1F5F9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lesson-body h2 {
+    color: #F1F5F9;
+  }
 }
 
 .lesson-body h3 {
   font-size: 1rem;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 18px 0 8px;
+}
+
+[data-theme="dark"] .lesson-body h3 {
+  color: #E2E8F0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lesson-body h3 {
+    color: #E2E8F0;
+  }
+}
+
+.lesson-body p {
+  margin: 0 0 14px;
+}
+
+.lesson-body strong {
+  color: #0F172A;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .lesson-body strong {
+  color: #F1F5F9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lesson-body strong {
+    color: #F1F5F9;
+  }
+}
+
+.lesson-body ul,
+.lesson-body ol {
+  padding-left: 22px;
+  margin: 0 0 14px;
+}
+
+.lesson-body li {
+  margin-bottom: 6px;
+}
+
+/* Inline code — blue-tinted pill */
+.lesson-body code,
+.lesson-content-panel code {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-size: 0.875em;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+[data-theme="dark"] .lesson-body code,
+[data-theme="dark"] .lesson-content-panel code {
+  background: #172554;
+  color: #93C5FD;
+  border-color: #1E3A8A;
+}
+
+@media (prefers-color-scheme: dark) {
+
+  :root:not([data-theme]) .lesson-body code,
+  :root:not([data-theme]) .lesson-content-panel code {
+    background: #172554;
+    color: #93C5FD;
+    border-color: #1E3A8A;
+  }
+}
+
+/* lesson-content-panel prose — same high contrast */
+.lesson-content-panel h1 {
+  color: var(--color-text);
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.lesson-content-panel h2 {
+  color: var(--color-primary);
+  margin: 22px 0 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.lesson-content-panel h3,
+.lesson-content-panel h4 {
   color: var(--color-text);
   margin: 18px 0 8px;
   font-weight: 600;
 }
 
-.lesson-body p {
-  margin: 0 0 12px;
+.lesson-content-panel p {
+  color: #1E293B;
+  line-height: 1.9;
+  margin-bottom: 14px;
 }
 
-.lesson-body ul,
-.lesson-body ol {
-  padding-left: 20px;
-  margin: 0 0 12px;
+[data-theme="dark"] .lesson-content-panel p {
+  color: #CBD5E1;
 }
 
-.lesson-body li {
-  margin-bottom: 5px;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .lesson-content-panel p {
+    color: #CBD5E1;
+  }
 }
 
-.lesson-body code {
-  background: var(--color-surface-2);
+.lesson-content-panel strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.lesson-content-panel ul,
+.lesson-content-panel ol {
+  padding-left: 22px;
+  margin-bottom: 14px;
+  color: #1E293B;
+}
+
+[data-theme="dark"] .lesson-content-panel ul,
+[data-theme="dark"] .lesson-content-panel ol {
+  color: #CBD5E1;
+}
+
+@media (prefers-color-scheme: dark) {
+
+  :root:not([data-theme]) .lesson-content-panel ul,
+  :root:not([data-theme]) .lesson-content-panel ol {
+    color: #CBD5E1;
+  }
+}
+
+.lesson-content-panel li {
+  margin-bottom: 6px;
+}
+
+.lesson-content-panel a {
   color: var(--color-primary);
-  padding: 2px 7px;
-  border-radius: var(--radius-xs);
-  font-size: 0.875em;
-  font-family: 'Courier New', monospace;
 }
 
 /* Hint panel */
@@ -917,60 +1043,6 @@ a {
   line-height: 1.65;
 }
 
-/* Lesson content panel headings & links in style.css override */
-.lesson-content-panel h1 {
-  color: var(--color-text);
-  font-size: 1.7rem;
-  font-weight: 800;
-  margin-bottom: 14px;
-}
-
-.lesson-content-panel h2 {
-  color: var(--color-primary);
-  margin: 22px 0 10px;
-  font-size: 1.1rem;
-}
-
-.lesson-content-panel h3,
-.lesson-content-panel h4 {
-  color: var(--color-text);
-  margin: 18px 0 8px;
-}
-
-.lesson-content-panel p {
-  color: var(--color-text-secondary);
-  line-height: 1.8;
-  margin-bottom: 14px;
-}
-
-.lesson-content-panel strong {
-  color: var(--color-text);
-}
-
-.lesson-content-panel ul,
-.lesson-content-panel ol {
-  padding-left: 22px;
-  margin-bottom: 14px;
-  color: var(--color-text-secondary);
-}
-
-.lesson-content-panel li {
-  margin-bottom: 6px;
-}
-
-.lesson-content-panel a {
-  color: var(--color-primary);
-}
-
-.lesson-content-panel code {
-  background: var(--color-surface-2);
-  color: var(--color-primary);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  font-family: 'Courier New', monospace;
-  font-size: 0.87em;
-}
-
 /* ============================================
    FORMS
    ============================================ */
@@ -1003,6 +1075,61 @@ a {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-hint {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.form-error {
+  color: var(--color-error);
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.form-error.hidden {
+  display: none;
+}
+
+/* Auth pages */
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 24px;
+  min-height: calc(100vh - 120px);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-card h1 {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--color-text);
+}
+
+.auth-subtitle {
+  color: var(--color-text-muted);
+  margin-bottom: 28px;
+  font-size: 0.95rem;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.auth-footer a {
+  color: var(--color-primary);
+  font-weight: 600;
 }
 
 /* ============================================
@@ -1062,7 +1189,6 @@ a {
   flex-wrap: wrap;
 }
 
-/* Status badges */
 .status-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -1181,6 +1307,10 @@ a {
 
 .toast-error {
   background: var(--color-error);
+}
+
+.toast-info {
+  background: var(--color-primary);
 }
 
 /* ============================================
@@ -1339,6 +1469,7 @@ a {
   .navbar {
     padding: 0 16px;
     height: 54px;
+    position: relative;
   }
 
   .navbar-links {
@@ -1381,10 +1512,6 @@ a {
 
   .nav-toggle {
     display: flex;
-  }
-
-  .navbar {
-    position: relative;
   }
 
   .dashboard-container,
