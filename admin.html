@@ -158,31 +158,19 @@
 
         </div>
 
-        <!-- PUBLISH OPTION -->
+        <!-- VISIBILITY (mutually exclusive) -->
         <div class="form-group">
-
-          <label class="form-label">
-
-            <input type="checkbox" id="isPublished">
-
-            Publish Lesson
-
-          </label>
-
+          <label class="form-label">Lesson Visibility</label>
+          <div style="display:flex; gap:24px; margin-top:8px; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500;">
+              <input type="radio" name="visibility" id="visPublished" value="published" checked> Publish
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500;">
+              <input type="radio" name="visibility" id="visHidden" value="hidden"> Hide
+            </label>
+          </div>
         </div>
 
-        <!-- HIDE OPTION -->
-        <div class="form-group">
-
-          <label class="form-label">
-
-            <input type="checkbox" id="isHidden">
-
-            Hide Lesson
-
-          </label>
-
-        </div>
 
         <!-- ACTIONS -->
         <div class="modal-actions">
@@ -454,10 +442,10 @@
           document.getElementById('starterCode').value,
 
         isPublished:
-          document.getElementById('isPublished').checked,
+          document.querySelector('input[name="visibility"]:checked')?.value === 'published',
 
         isHidden:
-          document.getElementById('isHidden').checked
+          document.querySelector('input[name="visibility"]:checked')?.value !== 'published'
 
       };
 
@@ -533,16 +521,14 @@
         document.getElementById('starterCode').value =
           lesson.starterCode || '';
 
-        document.getElementById('isPublished').checked =
-          !!lesson.isPublished;
+        const vis = lesson.isPublished ? 'published' : 'hidden';
+        const radioToCheck = document.querySelector(`input[name="visibility"][value="${vis}"]`);
+        if (radioToCheck) radioToCheck.checked = true;
 
-        document.getElementById('isHidden').checked =
-          !!lesson.isHidden;
-
-        document.getElementById('modalTitle').textContent =
-          'Edit Lesson';
+        document.getElementById('modalTitle').textContent = 'Edit Lesson';
 
         lessonModal.classList.add('active');
+
 
       } catch (err) {
 
