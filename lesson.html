@@ -2,113 +2,244 @@
 <html lang="en">
 
 <head>
-
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Lesson - EZ Programming</title>
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="css/style.css" />
 
   <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
       background: #0f172a;
-      color: white;
+      color: #e2e8f0;
     }
 
+    /* ── Navbar override for dark page ── */
+    .navbar {
+      background: #1e293b !important;
+      border-bottom: 1px solid #334155 !important;
+    }
+    .navbar-brand { color: #60a5fa !important; }
+    .navbar a { color: #cbd5e1 !important; }
+    .navbar a:hover { color: #fff !important; }
+
+    /* ── Layout ── */
     .lesson-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      min-height: 100vh;
+      min-height: calc(100vh - 60px);
     }
 
+    /* ── LEFT PANEL (Content) ── */
     .lesson-content-panel {
-      padding: 30px;
+      padding: 32px 36px;
       overflow-y: auto;
-      background: #111827;
+      background: #1e293b;
+      border-right: 1px solid #334155;
     }
 
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #60a5fa;
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #93c5fd; }
+
+    .lesson-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin: 0 0 12px;
+      line-height: 1.3;
+    }
+
+    .lesson-meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .meta-badge.topic  { background: #1e40af22; color: #93c5fd; border: 1px solid #1e40af55; }
+    .meta-badge.beginner     { background: #14532d33; color: #86efac; border: 1px solid #14532d66; }
+    .meta-badge.intermediate { background: #78350f33; color: #fcd34d; border: 1px solid #78350f66; }
+    .meta-badge.advanced     { background: #7f1d1d33; color: #fca5a5; border: 1px solid #7f1d1d66; }
+
+    /* Lesson content body */
+    .lesson-body {
+      font-size: 0.97rem;
+      line-height: 1.85;
+      color: #cbd5e1;
+    }
+    .lesson-body h2 {
+      font-size: 1.2rem;
+      color: #f1f5f9;
+      margin-top: 24px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .lesson-body h3 {
+      font-size: 1.05rem;
+      color: #e2e8f0;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    .lesson-body p  { margin: 0 0 14px; }
+    .lesson-body ul, .lesson-body ol { padding-left: 20px; margin: 0 0 14px; }
+    .lesson-body li { margin-bottom: 6px; }
+    .lesson-body code {
+      background: #0f172a;
+      color: #7dd3fc;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.88em;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ── Hint Box ── */
+    .hint-panel {
+      margin-top: 28px;
+      padding: 18px 20px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-left: 4px solid #3b82f6;
+      border-radius: 10px;
+    }
+    .hint-panel .hint-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #60a5fa;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+    .hint-panel p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+
+    /* ── RIGHT PANEL (Editor) ── */
     .lesson-editor-panel {
       background: #020617;
-      border-left: 1px solid #1e293b;
       display: flex;
       flex-direction: column;
     }
 
-    .hint-panel {
-      margin: 20px 0;
-      padding: 20px;
-      background: #1e293b;
-      border-radius: 12px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 50px;
-    }
-
     .editor-toolbar {
-      padding: 14px 18px;
-      background: #111827;
+      padding: 12px 18px;
+      background: #0f172a;
       border-bottom: 1px solid #1e293b;
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
+    }
+
+    .editor-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #94a3b8;
+      flex: 1;
+      letter-spacing: 0.03em;
     }
 
     .btn {
       border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
+      padding: 8px 18px;
+      border-radius: 7px;
       cursor: pointer;
       font-weight: 600;
-      transition: 0.2s;
+      font-size: 0.88rem;
+      transition: opacity 0.2s, transform 0.15s;
     }
-
-    .btn:hover {
-      opacity: 0.9;
-    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
 
     .btn-run {
       background: #2563eb;
-      color: white;
+      color: #fff;
     }
-
     .btn-complete {
       background: #16a34a;
-      color: white;
+      color: #fff;
+    }
+    .btn-complete.done {
+      background: #166534;
+      cursor: default;
     }
 
     #editorContainer {
       flex: 1;
-      min-height: 500px;
+      min-height: 380px;
     }
 
     #output {
       background: #000;
       color: #22c55e;
-      padding: 16px;
-      font-family: monospace;
-      height: 180px;
+      padding: 14px 18px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.88rem;
+      height: 160px;
       overflow-y: auto;
       border-top: 1px solid #1e293b;
       white-space: pre-wrap;
+      line-height: 1.6;
     }
 
-    a {
-      text-decoration: none;
+    /* ── Loading State ── */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #1e293b;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .lesson-container {
+        grid-template-columns: 1fr;
+      }
+      #editorContainer { min-height: 260px; }
+      #output { height: 120px; }
     }
   </style>
-
 </head>
 
 <body>
-
   <!-- NAVBAR -->
   <div id="navbar"></div>
 
@@ -116,323 +247,187 @@
 
     <!-- LEFT PANEL -->
     <div class="lesson-content-panel" id="contentArea">
-
       <div class="loading">
-        Loading lesson...
+        <div class="spinner"></div>
+        <p>Loading lesson…</p>
       </div>
-
     </div>
 
     <!-- RIGHT PANEL -->
     <div class="lesson-editor-panel">
-
       <div class="editor-toolbar">
-
-        <strong>Python Editor</strong>
-
-        <button class="btn btn-run" id="runBtn">
-          Run Code
-        </button>
-
-        <button class="btn btn-complete" id="completeBtn">
-          Mark Complete
-        </button>
-
+        <span class="editor-label">Python Editor</span>
+        <button class="btn btn-run" id="runBtn">Run Code</button>
+        <button class="btn btn-complete" id="completeBtn">Mark Complete</button>
       </div>
-
       <div id="editorContainer"></div>
-
-      <div id="output">
-        Output will appear here...
-      </div>
-
+      <div id="output">Output will appear here…</div>
     </div>
 
   </div>
 
-  <!-- ===================================== -->
-  <!-- MONACO EDITOR -->
-  <!-- ===================================== -->
-
+  <!-- MONACO -->
   <script>
-    var require = {
-      paths: {
-        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs'
-      }
-    };
+    var require = { paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } };
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
 
-  <!-- ===================================== -->
   <!-- PYODIDE -->
-  <!-- ===================================== -->
-
   <script type="module">
     import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.mjs";
-
     window.loadPyodide = loadPyodide;
   </script>
 
-  <!-- ===================================== -->
   <!-- MAIN SCRIPT -->
-  <!-- ===================================== -->
-
   <script type="module">
-
-    import { renderNavbar } from './js/navbar.js?v=1.1';
-
-    import {
-      apiRequest,
-      updateProgress,
-      onAuthChange
-    } from './js/auth.js?v=1.1';
+    import { renderNavbar } from './js/navbar.js?v=1.2';
+    import { apiRequest, updateProgress, onAuthChange, getProgress } from './js/auth.js?v=1.2';
 
     renderNavbar('lesson');
 
-    const lessonId =
-      new URLSearchParams(window.location.search).get('id');
-
+    const lessonId = new URLSearchParams(window.location.search).get('id');
     let editor = null;
     let pyodide = null;
 
-    // ============================================
-    // AUTH
-    // ============================================
-
+    // ── Auth Guard ──
     onAuthChange(async (user) => {
-
       if (!user || !lessonId) {
-
         window.location.href = 'login.html';
-
         return;
       }
-
       await initEditor();
-
       await loadLesson();
-
+      await checkCompletionState();
     });
 
-    // ============================================
-    // INIT MONACO EDITOR
-    // ============================================
-
+    // ── Monaco ──
     async function initEditor() {
-
       return new Promise((resolve) => {
-
-        window.require(
-          ['vs/editor/editor.main'],
-          function () {
-
-            editor = monaco.editor.create(
-
-              document.getElementById('editorContainer'),
-
-              {
-                value: '',
-                language: 'python',
-                theme: 'vs-dark',
-                automaticLayout: true,
-                fontSize: 14,
-                minimap: {
-                  enabled: false
-                }
-              }
-
-            );
-
-            resolve();
-
-          }
-        );
-
+        window.require(['vs/editor/editor.main'], () => {
+          editor = monaco.editor.create(document.getElementById('editorContainer'), {
+            value: '',
+            language: 'python',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            fontSize: 14,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            lineNumbers: 'on',
+            renderLineHighlight: 'all',
+          });
+          resolve();
+        });
       });
-
     }
 
-    // ============================================
-    // LOAD LESSON
-    // ============================================
-
+    // ── Load Lesson ──
     async function loadLesson() {
-
       try {
-
-        const data =
-          await apiRequest(`/api/lessons/${lessonId}`);
-
-        if (!data || !data.lesson) {
-          throw new Error('Lesson not found');
-        }
-
+        const data = await apiRequest(`/api/lessons/${lessonId}`);
+        if (!data || !data.lesson) throw new Error('Lesson not found');
         const lesson = data.lesson;
 
+        const diffClass = lesson.difficulty || 'beginner';
+
         document.getElementById('contentArea').innerHTML = `
+          <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
 
-          <a href="dashboard.html" style="color:#60a5fa;">
-            ← Back to Dashboard
-          </a>
+          <h1 class="lesson-title">${lesson.title || 'Untitled Lesson'}</h1>
 
-          <h1>${lesson.title || ''}</h1>
+          <div class="lesson-meta">
+            <span class="meta-badge topic">📂 ${lesson.topic || 'General'}</span>
+            <span class="meta-badge ${diffClass}">⚡ ${diffClass.charAt(0).toUpperCase() + diffClass.slice(1)}</span>
+          </div>
 
-          <p>
-
-            <strong>Topic:</strong>
-            ${lesson.topic || 'N/A'}
-
-            |
-
-            <strong>Difficulty:</strong>
-            ${lesson.difficulty || 'beginner'}
-
-          </p>
-
-          <div style="margin:25px 0; line-height:1.8;">
-
+          <div class="lesson-body">
             ${lesson.content || '<p>No content available.</p>'}
-
           </div>
 
           <div class="hint-panel">
-
-            <h3>Hint</h3>
-
-            <p>
-              ${lesson.hint || 'No hint available.'}
-            </p>
-
+            <div class="hint-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              Hint
+            </div>
+            <p>${lesson.hint || 'No hint available.'}</p>
           </div>
-
         `;
 
         if (editor) {
-
-          editor.setValue(
-            lesson.starterCode || ''
-          );
-
+          editor.setValue(lesson.starterCode || '');
         }
-
-        console.log('✅ Lesson loaded:', lesson);
-
       } catch (err) {
-
-        console.error(err);
-
         document.getElementById('contentArea').innerHTML = `
-
-          <p style="color:red;">
-            Error Loading Lesson:
-            ${err.message}
-          </p>
-
-          <a href="dashboard.html" style="color:#60a5fa;">
-            Back to Lessons
-          </a>
-
+          <a class="back-link" href="dashboard.html">← Back to Lessons</a>
+          <p style="color:#f87171; margin-top:20px;">Error loading lesson: ${err.message}</p>
         `;
       }
-
     }
 
-    // ============================================
-    // INIT PYODIDE
-    // ============================================
+    // ── Check if already completed ──
+    async function checkCompletionState() {
+      try {
+        const progress = await getProgress();
+        const record = progress.find(p => p.lessonId === lessonId);
+        if (record && record.status === 'completed') {
+          const btn = document.getElementById('completeBtn');
+          btn.textContent = '✓ Completed';
+          btn.classList.add('done');
+          btn.disabled = true;
+        }
+      } catch (e) { /* silent */ }
+    }
 
+    // ── Pyodide ──
     async function initPyodideRuntime() {
-
-      if (pyodide) {
-        return pyodide;
-      }
-
-      document.getElementById('output').textContent =
-        'Loading Python runtime...';
-
+      if (pyodide) return pyodide;
+      document.getElementById('output').textContent = 'Loading Python runtime…';
       pyodide = await window.loadPyodide();
-
-      document.getElementById('output').textContent =
-        'Python ready.';
-
+      document.getElementById('output').textContent = 'Python ready. Click Run Code.';
       return pyodide;
-
     }
 
-    // ============================================
-    // RUN CODE
-    // ============================================
+    // ── Run Code ──
+    document.getElementById('runBtn').addEventListener('click', async () => {
+      const runBtn = document.getElementById('runBtn');
+      runBtn.textContent = 'Running…';
+      runBtn.disabled = true;
+      try {
+        const py = await initPyodideRuntime();
+        const code = editor.getValue();
+        let output = '';
+        py.setStdout({ batched: (text) => { output += text + '\n'; } });
+        py.setStderr({ batched: (text) => { output += '⚠ ' + text + '\n'; } });
+        await py.runPythonAsync(code);
+        document.getElementById('output').textContent = output.trim() || '(no output)';
+      } catch (err) {
+        document.getElementById('output').textContent = '❌ ' + String(err);
+      } finally {
+        runBtn.textContent = 'Run Code';
+        runBtn.disabled = false;
+      }
+    });
 
-    document
-      .getElementById('runBtn')
-      .addEventListener('click', async () => {
-
-        try {
-
-          const py = await initPyodideRuntime();
-
-          const code = editor.getValue();
-
-          let output = '';
-
-          py.setStdout({
-
-            batched: (text) => {
-              output += text + '\n';
-            }
-
-          });
-
-          await py.runPythonAsync(code);
-
-          document.getElementById('output').textContent =
-            output || 'Code executed successfully';
-
-        } catch (err) {
-
-          console.error(err);
-
-          document.getElementById('output').textContent =
-            String(err);
-
-        }
-
-      });
-
-    // ============================================
-    // MARK COMPLETE
-    // ============================================
-
-    document
-      .getElementById('completeBtn')
-      .addEventListener('click', async () => {
-
-        try {
-
-          await updateProgress(
-            lessonId,
-            'completed'
-          );
-
-          alert('Lesson marked as completed!');
-
-          window.dispatchEvent(
-            new Event('progress-updated')
-          );
-
-        } catch (err) {
-
-          console.error(err);
-
-          alert('Failed to update progress');
-
-        }
-
-      });
-
+    // ── Mark Complete ──
+    document.getElementById('completeBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('completeBtn');
+      if (btn.disabled) return;
+      try {
+        btn.textContent = 'Saving…';
+        btn.disabled = true;
+        await updateProgress(lessonId, 'completed');
+        btn.textContent = '✓ Completed';
+        btn.classList.add('done');
+        // Small visual confirmation
+        const out = document.getElementById('output');
+        out.textContent = '🎉 Lesson marked as complete! Well done.';
+        out.style.color = '#4ade80';
+      } catch (err) {
+        btn.textContent = 'Mark Complete';
+        btn.disabled = false;
+        document.getElementById('output').textContent = '❌ Failed to save progress: ' + err.message;
+      }
+    });
   </script>
 
 </body>
-
 </html>

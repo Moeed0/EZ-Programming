@@ -266,11 +266,24 @@ export async function getProgress() {
       where("userId", "==", user.uid)
     );
     const snap = await getDocs(q);
-    const progress = snap.docs.map(docSnap => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
-    console.log(`✅ getProgress() returned ${progress.length} records`);
+
+    // Deduplicate: keep only one record per lessonId (prefer canonical uid_lessonId doc)
+    const progressMap = {};
+    snap.docs.forEach(docSnap => {
+      const data = docSnap.data();
+      const lid = data.lessonId;
+      if (!lid) return;
+      const canonicalId = `${user.uid}_${lid}`;
+      if (!progressMap[lid]) {
+        progressMap[lid] = { id: docSnap.id, ...data };
+      } else if (docSnap.id === canonicalId) {
+        // Canonical doc always wins
+        progressMap[lid] = { id: docSnap.id, ...data };
+      }
+    });
+
+    const progress = Object.values(progressMap);
+    console.log(`✅ getProgress() returned ${progress.length} unique records (from ${snap.docs.length} total)`);
     return progress;
   } catch (err) {
     console.error("Get Progress Error:", err);
